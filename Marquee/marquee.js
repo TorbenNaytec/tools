@@ -18,7 +18,55 @@ const SEL = {
   item:  '[data-marquee-item]',
 };
 
+const STYLE_ID = 'tw-marquee-styles';
+
+// Identisch zu marquee.css — hier eingebettet, damit der Marquee ohne
+// zusätzlichen <link> lauffähig ist. Wird einmalig pro Dokument injiziert.
+const CSS = `
+.tw-marquee {
+  --marquee-gap: clamp(16px, 4vw, 32px);
+  --marquee-duration: 30s;
+  --marquee-fade: 48px;
+
+  position: relative;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 var(--marquee-fade), #000 calc(100% - var(--marquee-fade)), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--marquee-fade), #000 calc(100% - var(--marquee-fade)), transparent);
+}
+
+.tw-marquee__track {
+  display: flex;
+  align-items: center;
+  gap: var(--marquee-gap);
+  width: max-content;
+  animation: tw-marquee var(--marquee-duration) linear infinite;
+}
+
+.tw-marquee.is-paused .tw-marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes tw-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tw-marquee__track { animation: none; }
+}
+`;
+
+function injectStyles() {
+  if (document.getElementById(STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = STYLE_ID;
+  style.textContent = CSS;
+  document.head.appendChild(style);
+}
+
 export function createMarquee(root, options = {}) {
+  injectStyles();
+
   const el = typeof root === 'string' ? document.querySelector(root) : root;
   if (!el) return null;
 

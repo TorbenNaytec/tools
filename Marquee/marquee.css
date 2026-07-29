@@ -3,11 +3,14 @@
    und als --marquee-duration gesetzt; hier nur Basiswerte/Fallback. */
 
 .tw-marquee {
-  --marquee-gap: 32px;
+  --marquee-gap: clamp(16px, 4vw, 32px);
   --marquee-duration: 30s;
+  --marquee-fade: 48px;
 
   position: relative;
   overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 var(--marquee-fade), #000 calc(100% - var(--marquee-fade)), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--marquee-fade), #000 calc(100% - var(--marquee-fade)), transparent);
 }
 
 .tw-marquee__track {

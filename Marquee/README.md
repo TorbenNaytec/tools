@@ -68,5 +68,10 @@ Testreglern für Geschwindigkeit, Richtung und Pause-bei-Hover.
 
 | Variable | Zweck |
 |---|---|
-| `--marquee-gap` | Abstand zwischen Items |
+| `--marquee-gap` | Abstand zwischen Items — standardmäßig responsiv (`clamp(16px, 4vw, 32px)`) |
+| `--marquee-fade` | Breite der Ausblend-Zone an den Rändern (Soft-Edge per Mask) |
 | `--marquee-duration` | Wird von `marquee.js` automatisch gesetzt — nicht manuell überschreiben |
+
+`marquee.js` injiziert das CSS oben beim ersten Aufruf automatisch als
+`<style>` ins Dokument — `marquee.css` einbinden ist optional, aber
+empfohlen, falls eigenes CSS darauf aufbauen soll.
