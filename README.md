@@ -25,6 +25,7 @@ oder komplett eigenes CSS ersetzt werden kann.
 - **[Slider](Slider/README.md)** — "Peek"-Slider/Carousel mit Dots, Pfeilen, Touch-Swipe, Tastatur, Auto-Höhe.
 - **[Marquee](Marquee/README.md)** — Endlos-Laufband mit automatischer Inhalts-Vervielfachung und konstanter Geschwindigkeit.
 - **[LightboxPopup](LightboxPopup/README.md)** — Bild-Lightbox-Popup: Klick auf ein Item öffnet eine Großansicht mit optionaler Bildunterschrift.
+- **[BlueprintBox](BlueprintBox/README.md)** — Generische Zu-/Abschalt-Steuerung für Tools: Variablenspeicher zur Kopplung, rekursive Baumstruktur für Sub-Tools.
 
 ## Testcenter (`index.html`)
 
@@ -32,13 +33,15 @@ oder komplett eigenes CSS ersetzt werden kann.
 `demo.html` rechts in einem iframe zum direkten Ausprobieren. Links pro
 Eintrag führen zusätzlich direkt zur Demo (eigener Tab) und zum README.
 
-## Onepager (`onepager.html`)
+## Blueprint (`blueprint.html`)
 
-`onepager.html` öffnen: alle Tools auf einer Seite, jede Section einzeln
-auf-/zuklappbar (initialisiert erst beim ersten Öffnen). Slider und Marquee
-binden dort zusätzlich LightboxPopup ein, als Beispiel dafür, wie sich Tools
-kombinieren lassen (Modul importieren, `data-lightbox*`-Attribute in die
-eigene Struktur mischen).
+`blueprint.html` öffnen: leere Fläche zum Start, Tools werden über
+**BlueprintBox** zu-/abgeschaltet (`../BlueprintBox/blueprintbox.js`).
+LightboxPopup koppelt sich automatisch an aktive Slider-/Marquee-Sections
+(Variablenspeicher der Blueprint Box). Slider spannt für Marquee zusätzlich
+eine eigene Kind-Box auf (`api.createChildBox()`) — Marquee läuft dort als
+Thumbnail-Symbolleiste direkt im Slider, als Beispiel für die rekursive
+Baumstruktur der Blueprint Box.
 
 ## Neues Tool ergänzen
 

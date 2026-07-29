@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>BlueprintBox — Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="blueprintbox.css">
+<style>
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #f5f5f3; color: #1a1a1a; padding: 24px 16px 60px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  p.hint { color: #666; margin-top: 0; font-size: 13px; line-height: 1.5; }
+
+  .section {
+    background: #fff; border: 1px solid #e2e2e0; border-radius: 12px;
+    margin-bottom: 12px; padding: 14px 18px;
+  }
+  .section .head { font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .section .head button[data-close] {
+    margin-left: auto; border: 1px solid #e2e2e0; background: #fff; color: #666;
+    border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px; line-height: 1;
+  }
+  .counter-value { font-size: 28px; font-weight: 700; }
+  .section button.step {
+    border: 1px solid #1a1a1a; background: #1a1a1a; color: #fff; border-radius: 6px;
+    padding: 4px 10px; cursor: pointer; font-size: 13px;
+  }
+  .nested-mount { margin-top: 10px; padding: 8px 10px; background: #fafafa; border-radius: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BlueprintBox — Demo</h1>
+  <p class="hint">
+    Drei Beispiel-Tools: <strong>Zähler</strong> schreibt seinen Stand über
+    <code>setVar</code>, <strong>Anzeige</strong> liest ihn per <code>getVar</code>/
+    <code>onChange</code> — ohne dass die Tools sich gegenseitig kennen.
+    <strong>Verschachtelt</strong> spannt per <code>api.createChildBox()</code>
+    eine eigene Blueprint Box für ein Sub-Tool auf (Baumstruktur).
+  </p>
+  <div id="blueprint-root"></div>
+</div>
+
+<script type="module">
+  import { createBlueprintBox } from './blueprintbox.js';
+
+  const addSectionInto = (api, html) => api.addSection(html);
+
+  const TOOLS = {
+    counter: {
+      name: 'Zähler',
+      desc: 'Schreibt seinen Stand als Variable "count" in die Blueprint Box.',
+      activate(api) {
+        addSectionInto(api, `
+          <div class="section" data-tool-id="counter">
+            <div class="head">Zähler <button type="button" data-close aria-label="Zähler deaktivieren">×</button></div>
+            <div class="counter-value" data-count>0</div>
+            <button type="button" class="step" data-step>+1</button>
+          </div>
+        `);
+        let count = 0;
+        api.setVar('count', count);
+        const el = document.querySelector('[data-tool-id="counter"]');
+        el.querySelector('[data-step]').addEventListener('click', () => {
+          count += 1;
+          api.setVar('count', count);
+          el.querySelector('[data-count]').textContent = String(count);
+        });
+      },
+      deactivate() {
+        document.querySelector('[data-tool-id="counter"]')?.remove();
+      },
+    },
+    display: {
+      name: 'Anzeige',
+      desc: 'Liest die Variable "count" aus und aktualisiert sich automatisch.',
+      activate(api) {
+        addSectionInto(api, `
+          <div class="section" data-tool-id="display">
+            <div class="head">Anzeige <button type="button" data-close aria-label="Anzeige deaktivieren">×</button></div>
+            <div>Aktueller Zählerstand: <strong data-display-value>–</strong></div>
+          </div>
+        `);
+        const el = document.querySelector('[data-tool-id="display"] [data-display-value]');
+        const refresh = () => { el.textContent = api.getVar('count') ?? '–'; };
+        refresh();
+        this._unsub = api.onChange(refresh);
+      },
+      deactivate() {
+        this._unsub?.();
+        document.querySelector('[data-tool-id="display"]')?.remove();
+      },
+    },
+    nested: {
+      name: 'Verschachtelt',
+      desc: 'Spannt per createChildBox() eine eigene Blueprint Box für ein Sub-Tool auf.',
+      activate(api) {
+        addSectionInto(api, `
+          <div class="section" data-tool-id="nested">
+            <div class="head">Verschachtelt <button type="button" data-close aria-label="Verschachtelt deaktivieren">×</button></div>
+            <div class="nested-mount" data-nested-mount></div>
+          </div>
+        `);
+        const mount = document.querySelector('[data-tool-id="nested"] [data-nested-mount]');
+        this._childBox = api.createChildBox(mount, {
+          sub: {
+            name: 'Sub-Tool',
+            desc: 'Ein Tool auf der nächsten Ebene der Baumstruktur.',
+            activate(childApi) {
+              childApi.addSection(`
+                <div class="section" data-tool-id="sub" style="margin-bottom:0">
+                  <div class="head">Sub-Tool <button type="button" data-close aria-label="Sub-Tool deaktivieren">×</button></div>
+                  <div>Läuft innerhalb der Kind-Box von "Verschachtelt".</div>
+                </div>
+              `);
+            },
+            deactivate() {
+              document.querySelector('[data-tool-id="sub"]')?.remove();
+            },
+          },
+        });
+      },
+      deactivate() {
+        this._childBox?.destroyAll();
+        document.querySelector('[data-tool-id="nested"]')?.remove();
+      },
+    },
+  };
+
+  createBlueprintBox('#blueprint-root', TOOLS);
+</script>
+</body>
+</html>

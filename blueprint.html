@@ -2,11 +2,12 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<title>Tools — Onepager</title>
+<title>Tools — Blueprint</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="Slider/slider.css">
 <link rel="stylesheet" href="Marquee/marquee.css">
 <link rel="stylesheet" href="LightboxPopup/lightboxpopup.css">
+<link rel="stylesheet" href="BlueprintBox/blueprintbox.css">
 <style>
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -21,63 +22,13 @@
   h1 { font-size: 22px; margin-bottom: 4px; }
   p.hint { color: #666; margin-top: 0; margin-bottom: 24px; font-size: 14px; line-height: 1.5; }
 
-  .picker-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .picker-card {
-    background: #fff;
-    border: 1px solid #e2e2e0;
-    border-radius: 12px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .picker-card .name { font-weight: 600; font-size: 15px; }
-  .picker-card .desc { font-size: 13px; color: #666; line-height: 1.4; flex: 1; }
-  .picker-card button {
-    align-self: flex-start;
-    border: 1px solid #1a1a1a;
-    background: #1a1a1a;
-    color: #fff;
-    border-radius: 8px;
-    padding: 7px 14px;
-    cursor: pointer;
-    font-size: 13px;
-  }
-  .picker-card button:hover { background: #333; }
+  /* Picker-Aussehen (Karten/Select/Fertig-Hinweis) kommt aus blueprintbox.css
+     über --blueprint-*-Variablen; hier nur Seitenabstand für die Root-Box. */
+  #blueprint-root [data-blueprint-grid],
+  #blueprint-root [data-blueprint-tree],
+  #blueprint-root [data-blueprint-select],
+  #blueprint-root [data-blueprint-done] { margin-bottom: 24px; }
 
-  .picker-select {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    background: #edf1ff;
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 24px;
-  }
-  .picker-select select {
-    font-size: 13px;
-    padding: 5px 8px;
-    border-radius: 6px;
-    border: 1px solid #b7c3f7;
-    background: #fff;
-    color: #1a1a1a;
-  }
-
-  .picker-done {
-    font-size: 13px;
-    color: #666;
-    background: #fff;
-    border: 1px solid #e2e2e0;
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 24px;
-  }
 
   .tool-section {
     background: #fff;
@@ -150,6 +101,11 @@
     border-bottom: 1px solid #ddd;
     padding: 20px 0;
   }
+  /* Marquee als eigene Slide (siehe marqueeSlideMarkup): keine zusätzlichen
+     Rahmen/Innenabstände von .tw-marquee, .demo-slide liefert bereits
+     Seitenverhältnis/Rundung/Overflow-Clipping wie bei den anderen Slides. */
+  .slider-inline-marquee { border: none; padding: 0; justify-content: center; }
+
   .demo-chip {
     position: relative;
     width: 160px;
@@ -201,23 +157,20 @@
     <code>npx --yes serve .</code> ausführen und über <code>http://localhost:…</code> öffnen.
   </div>
 
-  <h1>Tools — Onepager</h1>
+  <h1>Tools — Blueprint</h1>
   <p class="hint">
     Leere Fläche zum Start: erst ein Tool per Klick aktivieren, danach weitere
-    über das Auswahlfeld ergänzen. <strong>LightboxPopup</strong> verbindet sich
-    dabei automatisch mit bereits aktiven Slider-/Marquee-Sections (Klick auf
-    ein Bild öffnet die Großansicht) — so lässt sich zeigen, wie sich die Tools
-    kombinieren lassen.
+    über das Auswahlfeld ergänzen. Die Zu-/Abschalt-Steuerung übernimmt
+    <strong>BlueprintBox</strong> (<code>BlueprintBox/blueprintbox.js</code>).
+    <strong>LightboxPopup</strong> koppelt sich automatisch an bereits aktive
+    Slider-/Marquee-Sections. Sind <strong>Slider</strong> und
+    <strong>Marquee</strong> gleichzeitig aktiv, bekommt der Slider direkt in
+    JS eine zusätzliche <code>tw-slider__slide</code> mit einer echten
+    Marquee-Instanz darin — unabhängig davon, welches der beiden Tools zuerst
+    zugeschaltet wurde.
   </p>
 
-  <div class="picker-grid" id="picker-grid"></div>
-  <div class="picker-select" id="picker-select" hidden>
-    <label for="add-tool-select">Weiteres Tool aktivieren:</label>
-    <select id="add-tool-select"></select>
-  </div>
-  <div class="picker-done" id="picker-done" hidden>Alle Tools sind aktiv.</div>
-
-  <div id="stage"></div>
+  <div id="blueprint-root"></div>
 </div>
 
 <script>
@@ -229,6 +182,7 @@
   import { createSlider } from './Slider/slider.js';
   import { createMarquee } from './Marquee/marquee.js';
   import { createLightbox } from './LightboxPopup/lightboxpopup.js';
+  import { createBlueprintBox } from './BlueprintBox/blueprintbox.js';
 
   // Bildquelle für alle Sections, reihum verteilt.
   const IMAGE_SOURCE = './img';
@@ -246,12 +200,6 @@
     });
   };
 
-  const stage = document.getElementById('stage');
-  const pickerGrid = document.getElementById('picker-grid');
-  const pickerSelect = document.getElementById('picker-select');
-  const addToolSelect = document.getElementById('add-tool-select');
-  const pickerDone = document.getElementById('picker-done');
-
   // Lightbox verbindet sich automatisch mit jeder bereits aktiven Section,
   // die [data-lightbox] trägt — unabhängig von der Aktivierungsreihenfolge.
   let lightboxActive = false;
@@ -267,19 +215,83 @@
     delete lightboxInstances[key];
   };
 
-  const addSection = (html) => {
-    const section = document.createElement('div');
-    section.innerHTML = html;
-    stage.appendChild(section.firstElementChild);
+  // Marquee als eigene Slide im Slider: kein eigenes Tool/keine Kind-Box —
+  // Slider und Marquee erzeugen/entfernen die zusätzliche Slide direkt in
+  // JS, reaktiv auf den Aktiv-Status des jeweils anderen (genau wie die
+  // Lightbox-Kopplung oben). slider.js legt seine Slide-/Dot-Listen einmalig
+  // bei createSlider() an — deshalb entscheidet TOOLS.slider.activate direkt
+  // beim Aufbau (per rootApi.isActive('marquee') als Input), ob die
+  // Marquee-Slide von Anfang an Teil des Tracks ist. Schaltet Marquee erst
+  // später dazu/weg, muss der Slider einmalig neu aufgebaut werden, damit er
+  // die neue Slide-Anzahl kennt.
+  let marqueeSlideEl = null;
+  let marqueeInstance = null;
+
+  const marqueeSlideMarkup = () => `
+    <div class="tw-slider__slide" data-slider-slide>
+      <div class="demo-inner demo-slide tw-marquee slider-inline-marquee" data-marquee>
+        <div class="tw-marquee__track" data-marquee-track>
+          <span class="demo-chip" data-marquee-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+          <span class="demo-chip" data-marquee-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+          <span class="demo-chip" data-marquee-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+          <span class="demo-chip" data-marquee-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const mountMarqueeInstance = () => {
+    marqueeSlideEl.querySelectorAll('img').forEach((img, i) => { img.src = srcs[i % srcs.length]; });
+    marqueeInstance = createMarquee(marqueeSlideEl.querySelector('[data-marquee]'), { speed: 60, pauseOnHover: true });
+  };
+
+  const destroyMarqueeInstance = () => {
+    marqueeInstance?.destroy();
+    marqueeInstance = null;
+  };
+
+  const buildSlider = (startIndex = 0) => {
+    widgetInstances.slider = createSlider('#demo-slider [data-slider]', {
+      loop: true,
+      autoHeight: true,
+      heightSelector: '.demo-inner',
+      startIndex,
+    });
+  };
+
+  // Retroaktiv: Marquee wird zu-/abgeschaltet, während der Slider schon
+  // läuft — hier bleibt nur der einmalige Rebuild, da slider.js keine
+  // Möglichkeit bietet, nachträglich eine Slide anzumelden.
+  const attachMarqueeIndicator = () => {
+    if (marqueeSlideEl || !document.getElementById('demo-slider')) return;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = marqueeSlideMarkup();
+    marqueeSlideEl = wrap.firstElementChild;
+    document.querySelector('#demo-slider [data-slider-track]').appendChild(marqueeSlideEl);
+    mountMarqueeInstance();
+    const startIndex = widgetInstances.slider?.current ?? 0;
+    widgetInstances.slider?.destroy();
+    buildSlider(startIndex);
+  };
+
+  const detachMarqueeIndicator = () => {
+    if (!marqueeSlideEl) return;
+    destroyMarqueeInstance();
+    marqueeSlideEl.remove();
+    marqueeSlideEl = null;
+    if (!document.getElementById('demo-slider')) return;
+    const startIndex = widgetInstances.slider?.current ?? 0;
+    widgetInstances.slider?.destroy();
+    buildSlider(startIndex);
   };
 
   const TOOLS = {
     slider: {
       name: 'Slider',
-      desc: '"Peek"-Slider/Carousel mit Pfeilen, Dots und Swipe-Geste.',
-      activate() {
-        addSection(`
-          <div class="tool-section" id="demo-slider">
+      desc: '"Peek"-Slider mit Pfeilen, Dots, Swipe.',
+      activate(rootApi) {
+        rootApi.addSection(`
+          <div class="tool-section" id="demo-slider" data-tool-id="slider">
             <div class="head">Slider <span class="desc">"Peek"-Slider/Carousel</span><button type="button" class="close" data-close aria-label="Slider deaktivieren">×</button></div>
             <div class="tw-slider" data-slider data-lightbox>
               <div class="tw-slider__track" data-slider-track>
@@ -321,14 +333,24 @@
           </div>
         `);
         fillImages('demo-slider');
-        widgetInstances.slider = createSlider('#demo-slider [data-slider]', {
-          loop: true,
-          autoHeight: true,
-          heightSelector: '.demo-inner',
-        });
+
+        // Sobald aktiviert: sofort entscheiden (Input kommt synchron aus
+        // rootApi.isActive('marquee')), ob die Marquee-Slide von Anfang an
+        // Teil des Tracks ist — dafür braucht es keinen Rebuild, das ist
+        // direkt Teil des createSlider()-Aufrufs unten.
+        if (rootApi.isActive('marquee')) {
+          const wrap = document.createElement('div');
+          wrap.innerHTML = marqueeSlideMarkup();
+          marqueeSlideEl = wrap.firstElementChild;
+          document.querySelector('#demo-slider [data-slider-track]').appendChild(marqueeSlideEl);
+          mountMarqueeInstance();
+        }
+        buildSlider();
         attachLightbox('demo-slider');
       },
       deactivate() {
+        destroyMarqueeInstance();
+        marqueeSlideEl = null;
         detachLightbox('demo-slider');
         widgetInstances.slider?.destroy();
         widgetInstances.slider = null;
@@ -337,10 +359,10 @@
     },
     marquee: {
       name: 'Marquee',
-      desc: 'Endlos-Laufband mit Auto-Duplikation und Pause-on-Hover.',
-      activate() {
-        addSection(`
-          <div class="tool-section" id="demo-marquee">
+      desc: 'Endlos-Laufband mit Auto-Duplikation.',
+      activate(rootApi) {
+        rootApi.addSection(`
+          <div class="tool-section" id="demo-marquee" data-tool-id="marquee">
             <div class="head">Marquee <span class="desc">Endlos-Laufband mit Auto-Duplikation</span><button type="button" class="close" data-close aria-label="Marquee deaktivieren">×</button></div>
             <div class="tw-marquee" data-marquee data-lightbox>
               <div class="tw-marquee__track" data-marquee-track>
@@ -355,8 +377,11 @@
         fillImages('demo-marquee');
         widgetInstances.marquee = createMarquee('#demo-marquee [data-marquee]', { speed: 60, pauseOnHover: true });
         attachLightbox('demo-marquee');
+        // Rückwirkend koppeln, falls Slider schon läuft.
+        if (rootApi.isActive('slider')) attachMarqueeIndicator();
       },
       deactivate() {
+        detachMarqueeIndicator();
         detachLightbox('demo-marquee');
         widgetInstances.marquee?.destroy();
         widgetInstances.marquee = null;
@@ -365,10 +390,10 @@
     },
     lightbox: {
       name: 'LightboxPopup',
-      desc: 'Bild-Grid mit Klick-Großansicht; koppelt sich an bereits aktive Slider-/Marquee-Sections.',
-      activate() {
-        addSection(`
-          <div class="tool-section" id="demo-lightbox">
+      desc: 'Bild-Grid mit Großansicht, koppelt sich an aktive Sections.',
+      activate(rootApi) {
+        rootApi.addSection(`
+          <div class="tool-section" id="demo-lightbox" data-tool-id="lightbox">
             <div class="head">LightboxPopup <span class="desc">Bild-Grid mit Großansicht</span><button type="button" class="close" data-close aria-label="LightboxPopup deaktivieren">×</button></div>
             <div class="demo-grid" data-lightbox>
               <div class="demo-grid__item" data-lightbox-item data-lightbox-caption="Beschädigte Dosen"><img alt=""></div>
@@ -397,78 +422,7 @@
     },
   };
 
-  const active = new Set();
-
-  const renderButtons = () => {
-    pickerGrid.innerHTML = '';
-    Object.entries(TOOLS).forEach(([key, tool]) => {
-      const card = document.createElement('div');
-      card.className = 'picker-card';
-      card.innerHTML = `
-        <div class="name">${tool.name}</div>
-        <div class="desc">${tool.desc}</div>
-        <button type="button">Aktivieren</button>
-      `;
-      card.querySelector('button').addEventListener('click', () => activateTool(key));
-      pickerGrid.appendChild(card);
-    });
-  };
-
-  const renderSelect = () => {
-    const remaining = Object.keys(TOOLS).filter((k) => !active.has(k));
-    addToolSelect.innerHTML = '<option value="" disabled selected>Tool wählen …</option>'
-      + remaining.map((k) => `<option value="${k}">${TOOLS[k].name} — ${TOOLS[k].desc}</option>`).join('');
-  };
-
-  const updatePicker = () => {
-    if (active.size === 0) {
-      pickerGrid.hidden = false;
-      pickerSelect.hidden = true;
-      pickerDone.hidden = true;
-      renderButtons();
-      return;
-    }
-    pickerGrid.hidden = true;
-    const remaining = Object.keys(TOOLS).filter((k) => !active.has(k));
-    if (remaining.length === 0) {
-      pickerSelect.hidden = true;
-      pickerDone.hidden = false;
-    } else {
-      pickerSelect.hidden = false;
-      pickerDone.hidden = true;
-      renderSelect();
-    }
-  };
-
-  function activateTool(key) {
-    if (active.has(key)) return;
-    active.add(key);
-    TOOLS[key].activate();
-    updatePicker();
-  }
-
-  function deactivateTool(key) {
-    if (!active.has(key)) return;
-    active.delete(key);
-    TOOLS[key].deactivate();
-    updatePicker();
-  }
-
-  addToolSelect.addEventListener('change', () => {
-    const key = addToolSelect.value;
-    if (key) activateTool(key);
-  });
-
-  // Deaktivieren über den ×-Button im Section-Kopf, delegiert auf die Stage.
-  stage.addEventListener('click', (e) => {
-    const closeBtn = e.target.closest('[data-close]');
-    if (!closeBtn) return;
-    const section = closeBtn.closest('.tool-section');
-    const key = Object.keys(TOOLS).find((k) => section.id === `demo-${k}`);
-    if (key) deactivateTool(key);
-  });
-
-  updatePicker();
+  createBlueprintBox('#blueprint-root', TOOLS);
 </script>
 </body>
 </html>
