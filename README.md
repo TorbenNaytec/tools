@@ -24,12 +24,21 @@ oder komplett eigenes CSS ersetzt werden kann.
 
 - **[Slider](Slider/README.md)** — "Peek"-Slider/Carousel mit Dots, Pfeilen, Touch-Swipe, Tastatur, Auto-Höhe.
 - **[Marquee](Marquee/README.md)** — Endlos-Laufband mit automatischer Inhalts-Vervielfachung und konstanter Geschwindigkeit.
+- **[LightboxPopup](LightboxPopup/README.md)** — Bild-Lightbox-Popup: Klick auf ein Item öffnet eine Großansicht mit optionaler Bildunterschrift.
 
 ## Testcenter (`index.html`)
 
 `index.html` öffnen: listet alle Tools links auf, lädt die jeweilige
 `demo.html` rechts in einem iframe zum direkten Ausprobieren. Links pro
 Eintrag führen zusätzlich direkt zur Demo (eigener Tab) und zum README.
+
+## Onepager (`onepager.html`)
+
+`onepager.html` öffnen: alle Tools auf einer Seite, jede Section einzeln
+auf-/zuklappbar (initialisiert erst beim ersten Öffnen). Slider und Marquee
+binden dort zusätzlich LightboxPopup ein, als Beispiel dafür, wie sich Tools
+kombinieren lassen (Modul importieren, `data-lightbox*`-Attribute in die
+eigene Struktur mischen).
 
 ## Neues Tool ergänzen
 

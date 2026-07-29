@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Tools — Onepager</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="Slider/slider.css">
+<link rel="stylesheet" href="Marquee/marquee.css">
+<link rel="stylesheet" href="LightboxPopup/lightboxpopup.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #f5f5f3;
+    color: #1a1a1a;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p.hint { color: #666; margin-top: 0; margin-bottom: 24px; font-size: 14px; line-height: 1.5; }
+
+  .toolbar { display: flex; gap: 10px; margin-bottom: 24px; }
+  .toolbar button {
+    border: 1px solid #1a1a1a;
+    background: #fff;
+    color: #1a1a1a;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .toolbar button:hover { background: #1a1a1a; color: #fff; }
+
+  details.tool-section {
+    background: #fff;
+    border: 1px solid #e2e2e0;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  details.tool-section > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 16px 20px;
+    font-weight: 600;
+    font-size: 16px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  details.tool-section > summary::-webkit-details-marker { display: none; }
+  details.tool-section > summary::before {
+    content: '+';
+    font-weight: 400;
+    color: #999;
+    width: 14px;
+  }
+  details.tool-section[open] > summary::before { content: '−'; }
+  details.tool-section > summary .desc { font-weight: 400; color: #666; font-size: 13px; }
+  details.tool-section .tool-body { padding: 4px 20px 24px; }
+
+  .combo-panel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #333;
+    background: #edf1ff;
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-bottom: 16px;
+  }
+  .combo-panel label { display: flex; align-items: center; gap: 6px; }
+  .combo-panel select {
+    font-size: 12px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    border: 1px solid #b7c3f7;
+    background: #fff;
+    color: #1a1a1a;
+  }
+
+  .demo-slide {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    padding: 32px 28px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    aspect-ratio: 4 / 3;
+  }
+  #demo-slider.has-lightbox .demo-slide { cursor: pointer; }
+  @media (max-width: 600px) {
+    .demo-slide { aspect-ratio: 3 / 4; }
+  }
+  .demo-slide__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .demo-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,.05) 60%);
+    z-index: 1;
+  }
+  .demo-slide h2, .demo-slide p { position: relative; z-index: 2; margin: 0; }
+  .demo-slide h2 { margin-bottom: 8px; font-size: 20px; }
+  .demo-slide p { opacity: .85; font-size: 14px; line-height: 1.5; }
+
+  .tw-slider {
+    --slider-arrow-bg: #1a1a1a;
+    --slider-arrow-color: #fff;
+    --slider-arrow-border: #1a1a1a;
+    --slider-dot-active-color: #1a1a1a;
+    --slider-dot-color: rgba(0,0,0,.25);
+    border-radius: 16px;
+  }
+  .tw-slider__track { transition: var(--slider-transition), height .35s ease; }
+
+  .tw-marquee {
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 20px 0;
+  }
+  .demo-chip {
+    position: relative;
+    width: 160px;
+    height: 100px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #1a1a1a;
+    flex-shrink: 0;
+  }
+  .demo-chip__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .demo-chip__label {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    z-index: 1;
+    padding: 8px 12px;
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.3;
+    background: linear-gradient(to bottom, rgba(0,0,0,.65), transparent);
+  }
+  #demo-marquee.has-lightbox .demo-chip { cursor: pointer; }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+  .demo-grid__item { border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3; cursor: pointer; }
+  .demo-grid__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .file-warning {
+    background: #fff3cd;
+    color: #664d03;
+    border: 1px solid #ffe69c;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .file-warning code { background: rgba(0,0,0,.06); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="file-warning" id="file-warning" hidden>
+    ⚠️ Läuft über <code>file://</code> — ES-Module werden vom Browser blockiert,
+    die Demos bleiben inaktiv. Im Ordner <code>Tools/</code> einmalig
+    <code>npx --yes serve .</code> ausführen und über <code>http://localhost:…</code> öffnen.
+  </div>
+
+  <h1>Tools — Onepager</h1>
+  <p class="hint">
+    Alle Tools auf einer Seite, jede Section einzeln auf-/zuklappbar.
+    Eine Section wird erst beim ersten Öffnen initialisiert. Slider und Marquee
+    lassen sich zusätzlich mit <strong>LightboxPopup</strong> kombinieren —
+    über das Select in der jeweiligen Section live zu-/abschaltbar (Klick auf
+    ein Bild öffnet dann die Großansicht). Das zeigt, wie sich Tools
+    kombinieren lassen: einfach Modul importieren und die
+    <code>data-lightbox*</code>-Attribute in die eigene Struktur mischen.
+  </p>
+
+  <div class="toolbar">
+    <button id="expand-all">Alle öffnen</button>
+    <button id="collapse-all">Alle schließen</button>
+  </div>
+
+  <details class="tool-section" data-demo="demo-slider" open>
+    <summary>Slider <span class="desc">"Peek"-Slider/Carousel</span></summary>
+    <div class="tool-body">
+      <div class="combo-panel">
+        <label for="slider-combo-select">Zusatz-Tool:</label>
+        <select id="slider-combo-select">
+          <option value="none">Ohne Zusatz-Tool</option>
+          <option value="lightbox" selected>+ LightboxPopup (Klick auf Slide-Bild → Großansicht)</option>
+        </select>
+      </div>
+      <div id="demo-slider">
+        <div class="tw-slider" data-slider data-lightbox>
+          <div class="tw-slider__track" data-slider-track>
+            <div class="tw-slider__slide" data-slider-slide>
+              <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 1">
+                <img class="demo-slide__img" alt="">
+                <h2>Slide 1</h2>
+                <p>Beispieltext, um Layout und Übergänge zu prüfen.</p>
+              </div>
+            </div>
+            <div class="tw-slider__slide" data-slider-slide>
+              <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 2">
+                <img class="demo-slide__img" alt="">
+                <h2>Slide 2</h2>
+                <p>Einheitliches Seitenverhältnis, Nav bleibt auf gleicher Höhe.</p>
+              </div>
+            </div>
+            <div class="tw-slider__slide" data-slider-slide>
+              <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 3">
+                <img class="demo-slide__img" alt="">
+                <h2>Slide 3</h2>
+                <p>Kurzer Inhalt.</p>
+              </div>
+            </div>
+            <div class="tw-slider__slide" data-slider-slide>
+              <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 4">
+                <img class="demo-slide__img" alt="">
+                <h2>Slide 4</h2>
+                <p>Per Wischgeste, Pfeiltasten oder Pfeil-Buttons navigierbar.</p>
+              </div>
+            </div>
+          </div>
+          <div class="tw-slider__nav">
+            <button class="tw-slider__arrow" data-slider-prev aria-label="Zurück">‹</button>
+            <div class="tw-slider__dots" data-slider-dots></div>
+            <button class="tw-slider__arrow" data-slider-next aria-label="Weiter">›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="tool-section" data-demo="demo-marquee">
+    <summary>Marquee <span class="desc">Endlos-Laufband mit Auto-Duplikation</span></summary>
+    <div class="tool-body">
+      <div class="combo-panel">
+        <label for="marquee-combo-select">Zusatz-Tool:</label>
+        <select id="marquee-combo-select">
+          <option value="none">Ohne Zusatz-Tool</option>
+          <option value="lightbox" selected>+ LightboxPopup (Klick auf Chip → Großansicht)</option>
+        </select>
+      </div>
+      <div id="demo-marquee">
+        <div class="tw-marquee" data-marquee data-lightbox>
+          <div class="tw-marquee__track" data-marquee-track>
+            <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+            <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+            <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+            <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="tool-section" data-demo="demo-lightbox">
+    <summary>LightboxPopup <span class="desc">Bild-Grid mit Großansicht (eigenständig)</span></summary>
+    <div class="tool-body">
+      <div id="demo-lightbox">
+        <div class="demo-grid" data-lightbox>
+          <div class="demo-grid__item" data-lightbox-item data-lightbox-caption="Beschädigte Dosen"><img alt=""></div>
+          <div class="demo-grid__item" data-lightbox-item><img alt=""></div>
+          <div class="demo-grid__item" data-lightbox-item data-lightbox-caption="Cold Steel Schwert"><img alt=""></div>
+          <div class="demo-grid__item" data-lightbox-item><img alt=""></div>
+        </div>
+      </div>
+    </div>
+  </details>
+</div>
+
+<script>
+  if (location.protocol === 'file:') {
+    document.getElementById('file-warning').hidden = false;
+  }
+</script>
+<script type="module">
+  import { createSlider } from './Slider/slider.js';
+  import { createMarquee } from './Marquee/marquee.js';
+  import { createLightbox } from './LightboxPopup/lightboxpopup.js';
+
+  // Bildquelle für alle Sections, reihum verteilt.
+  const IMAGE_SOURCE = './img';
+  const IMAGE_FILES = [
+    'beschädigte Dosen3.png',
+    'flowerthrow.png',
+    'cst-88hs_cold_steel_schwert_competition_cutting_sword_2020SU89OjjQtQ7uP_600x600.jpg',
+    'schild.jpg.webp',
+  ];
+  const srcs = IMAGE_FILES.map((f) => `${IMAGE_SOURCE}/${f}`);
+
+  const fillImages = (containerId) => {
+    document.querySelectorAll(`#${containerId} img`).forEach((img, i) => {
+      img.src = srcs[i % srcs.length];
+    });
+  };
+
+  // Zusatz-Tool "LightboxPopup" ist über ein <select> pro Section live zu-
+  // und abschaltbar — dabei wird nur die Lightbox-Instanz erzeugt/zerstört,
+  // die Slider-/Marquee-Instanz bleibt unangetastet (kein Reset von Position
+  // bzw. Laufband beim Umschalten).
+  const sliderCombo  = document.getElementById('slider-combo-select');
+  const marqueeCombo = document.getElementById('marquee-combo-select');
+  let sliderLightbox  = null;
+  let marqueeLightbox = null;
+
+  const applySliderCombo = () => {
+    sliderLightbox?.destroy();
+    sliderLightbox = null;
+    const enabled = sliderCombo.value === 'lightbox';
+    document.getElementById('demo-slider').classList.toggle('has-lightbox', enabled);
+    if (enabled) sliderLightbox = createLightbox('#demo-slider [data-lightbox]');
+  };
+
+  const applyMarqueeCombo = () => {
+    marqueeLightbox?.destroy();
+    marqueeLightbox = null;
+    const enabled = marqueeCombo.value === 'lightbox';
+    document.getElementById('demo-marquee').classList.toggle('has-lightbox', enabled);
+    if (enabled) marqueeLightbox = createLightbox('#demo-marquee [data-lightbox]');
+  };
+
+  sliderCombo.addEventListener('change', applySliderCombo);
+  marqueeCombo.addEventListener('change', applyMarqueeCombo);
+
+  // Jede Section wird erst beim ersten Öffnen initialisiert (Details-Toggle).
+  const initializers = {
+    'demo-slider': () => {
+      fillImages('demo-slider');
+      createSlider('#demo-slider [data-slider]', {
+        loop: true,
+        autoHeight: true,
+        heightSelector: '.demo-inner',
+      });
+      applySliderCombo();
+    },
+    'demo-marquee': () => {
+      fillImages('demo-marquee');
+      createMarquee('#demo-marquee [data-marquee]', { speed: 60, pauseOnHover: true });
+      applyMarqueeCombo();
+    },
+    'demo-lightbox': () => {
+      fillImages('demo-lightbox');
+      createLightbox('#demo-lightbox [data-lightbox]');
+    },
+  };
+
+  const initialized = new Set();
+  document.querySelectorAll('details.tool-section').forEach((details) => {
+    const key = details.dataset.demo;
+    const runInit = () => {
+      if (details.open && !initialized.has(key)) {
+        initialized.add(key);
+        initializers[key]?.();
+      }
+    };
+    details.addEventListener('toggle', runInit);
+    runInit(); // Section, die bereits offen ist (z.B. per [open]-Attribut), sofort initialisieren.
+  });
+
+  document.getElementById('expand-all').addEventListener('click', () => {
+    document.querySelectorAll('details.tool-section').forEach((d) => { d.open = true; });
+  });
+  document.getElementById('collapse-all').addEventListener('click', () => {
+    document.querySelectorAll('details.tool-section').forEach((d) => { d.open = false; });
+  });
+</script>
+</body>
+</html>

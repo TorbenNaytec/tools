@@ -5,6 +5,7 @@
 <title>Marquee — Demo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="marquee.css">
+<link rel="stylesheet" href="../LightboxPopup/lightboxpopup.css">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -49,17 +50,25 @@
     padding: 20px 0;
   }
   .demo-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border-radius: 999px;
+    position: relative;
+    width: 160px;
+    height: 100px;
+    border-radius: 12px;
+    overflow: hidden;
     background: #1a1a1a;
-    color: #fff;
-    font-size: 14px;
-    white-space: nowrap;
+    flex-shrink: 0;
   }
-  .demo-chip__img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+  .demo-chip__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .demo-chip__label {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    z-index: 1;
+    padding: 8px 12px;
+    color: #fff;
+    font-size: 13px;
+    line-height: 1.3;
+    background: linear-gradient(to bottom, rgba(0,0,0,.65), transparent);
+  }
 
   .file-warning {
     background: #fff3cd;
@@ -94,14 +103,14 @@
     <button id="reinit">Neu initialisieren</button>
   </div>
 
-  <div class="tw-marquee" data-marquee>
+  <div class="tw-marquee" data-marquee data-lightbox>
     <div class="tw-marquee__track" data-marquee-track>
-      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-01.svg" alt="">Wiederverwendbar</span>
-      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-02.svg" alt="">Keine Abhängigkeiten</span>
-      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-03.svg" alt="">Konstante Geschwindigkeit</span>
-      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-04.svg" alt="">Auto-Duplikation</span>
-      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-05.svg" alt="">Pause bei Hover</span>
-      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-06.svg" alt="">Reduced-Motion-fähig</span>
+      <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+      <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+      <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+      <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+      <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+      <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
     </div>
   </div>
 </div>
@@ -113,6 +122,47 @@
 </script>
 <script type="module">
   import { createMarquee } from './marquee.js';
+  import { createLightbox } from '../LightboxPopup/lightboxpopup.js';
+
+  // Bildquelle konfigurierbar:
+  //  - String  → Ordnerpfad, wird mit IMAGE_FILES zu vollständigen Pfaden kombiniert
+  //  - Array   → direkte Liste von Pfaden/URLs, wird reihum auf die Items verteilt
+  const IMAGE_SOURCE = '../img';
+  const IMAGE_FILES = [
+    'beschädigte Dosen3.png',
+    'flowerthrow.png',
+    'cst-88hs_cold_steel_schwert_competition_cutting_sword_2020SU89OjjQtQ7uP_600x600.jpg',
+    'schild.jpg.webp',
+  ];
+
+  // Label je Item optional — leerer String/undefined → kein Label-Overlay im Bild.
+  const LABELS = [
+    'Wiederverwendbar',
+    'Keine Abhängigkeiten',
+    '',
+    'Auto-Duplikation',
+    'Pause bei Hover',
+    '',
+  ];
+
+  const resolveImageSrcs = (source, files) =>
+    Array.isArray(source) ? source : files.map((f) => `${source}/${f}`);
+
+  document.querySelectorAll('[data-marquee-item]').forEach((item, i) => {
+    const srcs = resolveImageSrcs(IMAGE_SOURCE, IMAGE_FILES);
+    item.querySelector('.demo-chip__img').src = srcs[i % srcs.length];
+
+    const label = LABELS[i % LABELS.length];
+    const labelEl = item.querySelector('.demo-chip__label');
+    if (label) {
+      labelEl.textContent = label;
+      item.setAttribute('data-lightbox-caption', label);
+    } else {
+      labelEl.remove();
+    }
+  });
+
+  createLightbox('[data-lightbox]');
 
   let instance = null;
   const speedInput = document.getElementById('opt-speed');

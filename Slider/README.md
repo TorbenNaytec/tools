@@ -4,11 +4,11 @@ Wiederverwendbarer "Peek"-Slider/Carousel. Reines JavaScript (ES-Modul, keine
 Abhängigkeiten) + reines CSS — kein Build-Schritt nötig, einfach `slider.js`
 und `slider.css` in ein Projekt kopieren.
 
-Verhalten (`slider.js`), Layout/Mechanik (`funktion.css`) und Aussehen
-(`slider.css`) sind strikt getrennt: Das Script kennt keine
-Projekt-Klassennamen, sondern steuert nur über `data-*`-Attribute.
-`funktion.css` enthält nur das CSS, das der Slider zwingend braucht, um zu
-funktionieren — daran sollte nichts geändert werden:
+Verhalten (`slider.js`) und Aussehen (`slider.css`) sind strikt getrennt:
+Das Script kennt keine Projekt-Klassennamen, sondern steuert nur über
+`data-*`-Attribute. Folgender Teil von `slider.css` ist der funktionale
+Kern, der zwingend nötig ist, damit der Slider funktioniert — daran sollte
+beim Anpassen nichts geändert werden:
 
 - `.tw-slider`: `position: relative` + `overflow: hidden`, damit nur der
   aktive Ausschnitt des Tracks sichtbar ist.
@@ -26,10 +26,8 @@ funktionieren — daran sollte nichts geändert werden:
 `slider.css` liefert das neutrale Skeleton zum Anpassen über
 CSS-Variablen (Farben, Formen, Übergangs-Effekte) — der funktionale Teil
 ist direkt mit ausgeliefert (kein `@import`, keine zusätzliche
-HTTP-Anfrage). `funktion.css` liegt zusätzlich als eigene Datei bei und
-dient als Referenz/Dokumentation, welcher Teil des CSS zwingend nötig ist
-und beim Ersetzen von `slider.css` durch eigenes CSS erhalten bleiben
-muss — eingebunden wird nur `slider.css`.
+HTTP-Anfrage). Beim Ersetzen von `slider.css` durch eigenes CSS muss
+dieser funktionale Teil erhalten bleiben.
 
 ## Einbauen
 
