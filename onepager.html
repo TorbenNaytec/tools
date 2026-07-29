@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="LightboxPopup/lightboxpopup.css">
 <style>
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body {
     margin: 0;
     font-family: system-ui, sans-serif;
@@ -20,67 +21,93 @@
   h1 { font-size: 22px; margin-bottom: 4px; }
   p.hint { color: #666; margin-top: 0; margin-bottom: 24px; font-size: 14px; line-height: 1.5; }
 
-  .toolbar { display: flex; gap: 10px; margin-bottom: 24px; }
-  .toolbar button {
-    border: 1px solid #1a1a1a;
-    background: #fff;
-    color: #1a1a1a;
-    border-radius: 8px;
-    padding: 8px 16px;
-    cursor: pointer;
-    font-size: 13px;
+  .picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
   }
-  .toolbar button:hover { background: #1a1a1a; color: #fff; }
-
-  details.tool-section {
+  .picker-card {
     background: #fff;
     border: 1px solid #e2e2e0;
     border-radius: 12px;
-    margin-bottom: 16px;
-    overflow: hidden;
-  }
-  details.tool-section > summary {
-    cursor: pointer;
-    list-style: none;
-    padding: 16px 20px;
-    font-weight: 600;
-    font-size: 16px;
+    padding: 16px;
     display: flex;
-    align-items: baseline;
-    gap: 10px;
-  }
-  details.tool-section > summary::-webkit-details-marker { display: none; }
-  details.tool-section > summary::before {
-    content: '+';
-    font-weight: 400;
-    color: #999;
-    width: 14px;
-  }
-  details.tool-section[open] > summary::before { content: '−'; }
-  details.tool-section > summary .desc { font-weight: 400; color: #666; font-size: 13px; }
-  details.tool-section .tool-body { padding: 4px 20px 24px; }
-
-  .combo-panel {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
     gap: 8px;
-    font-size: 12px;
-    color: #333;
-    background: #edf1ff;
-    border-radius: 8px;
-    padding: 6px 10px;
-    margin-bottom: 16px;
   }
-  .combo-panel label { display: flex; align-items: center; gap: 6px; }
-  .combo-panel select {
-    font-size: 12px;
-    padding: 3px 6px;
+  .picker-card .name { font-weight: 600; font-size: 15px; }
+  .picker-card .desc { font-size: 13px; color: #666; line-height: 1.4; flex: 1; }
+  .picker-card button {
+    align-self: flex-start;
+    border: 1px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .picker-card button:hover { background: #333; }
+
+  .picker-select {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    background: #edf1ff;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+  }
+  .picker-select select {
+    font-size: 13px;
+    padding: 5px 8px;
     border-radius: 6px;
     border: 1px solid #b7c3f7;
     background: #fff;
     color: #1a1a1a;
   }
+
+  .picker-done {
+    font-size: 13px;
+    color: #666;
+    background: #fff;
+    border: 1px solid #e2e2e0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+  }
+
+  .tool-section {
+    background: #fff;
+    border: 1px solid #e2e2e0;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    padding: 16px 20px 24px;
+  }
+  .tool-section .head {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .tool-section .head .desc { font-weight: 400; color: #666; font-size: 13px; }
+  .tool-section .head .close {
+    margin-left: auto;
+    border: 1px solid #e2e2e0;
+    background: #fff;
+    color: #666;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    line-height: 1;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .tool-section .head .close:hover { border-color: #c33; color: #c33; }
 
   .demo-slide {
     position: relative;
@@ -93,7 +120,7 @@
     justify-content: flex-end;
     aspect-ratio: 4 / 3;
   }
-  #demo-slider.has-lightbox .demo-slide { cursor: pointer; }
+  #demo-slider [data-lightbox-item] { cursor: pointer; }
   @media (max-width: 600px) {
     .demo-slide { aspect-ratio: 3 / 4; }
   }
@@ -143,7 +170,7 @@
     line-height: 1.3;
     background: linear-gradient(to bottom, rgba(0,0,0,.65), transparent);
   }
-  #demo-marquee.has-lightbox .demo-chip { cursor: pointer; }
+  #demo-marquee [data-lightbox-item] { cursor: pointer; }
 
   .demo-grid {
     display: grid;
@@ -176,108 +203,21 @@
 
   <h1>Tools — Onepager</h1>
   <p class="hint">
-    Alle Tools auf einer Seite, jede Section einzeln auf-/zuklappbar.
-    Eine Section wird erst beim ersten Öffnen initialisiert. Slider und Marquee
-    lassen sich zusätzlich mit <strong>LightboxPopup</strong> kombinieren —
-    über das Select in der jeweiligen Section live zu-/abschaltbar (Klick auf
-    ein Bild öffnet dann die Großansicht). Das zeigt, wie sich Tools
-    kombinieren lassen: einfach Modul importieren und die
-    <code>data-lightbox*</code>-Attribute in die eigene Struktur mischen.
+    Leere Fläche zum Start: erst ein Tool per Klick aktivieren, danach weitere
+    über das Auswahlfeld ergänzen. <strong>LightboxPopup</strong> verbindet sich
+    dabei automatisch mit bereits aktiven Slider-/Marquee-Sections (Klick auf
+    ein Bild öffnet die Großansicht) — so lässt sich zeigen, wie sich die Tools
+    kombinieren lassen.
   </p>
 
-  <div class="toolbar">
-    <button id="expand-all">Alle öffnen</button>
-    <button id="collapse-all">Alle schließen</button>
+  <div class="picker-grid" id="picker-grid"></div>
+  <div class="picker-select" id="picker-select" hidden>
+    <label for="add-tool-select">Weiteres Tool aktivieren:</label>
+    <select id="add-tool-select"></select>
   </div>
+  <div class="picker-done" id="picker-done" hidden>Alle Tools sind aktiv.</div>
 
-  <details class="tool-section" data-demo="demo-slider" open>
-    <summary>Slider <span class="desc">"Peek"-Slider/Carousel</span></summary>
-    <div class="tool-body">
-      <div class="combo-panel">
-        <label for="slider-combo-select">Zusatz-Tool:</label>
-        <select id="slider-combo-select">
-          <option value="none">Ohne Zusatz-Tool</option>
-          <option value="lightbox" selected>+ LightboxPopup (Klick auf Slide-Bild → Großansicht)</option>
-        </select>
-      </div>
-      <div id="demo-slider">
-        <div class="tw-slider" data-slider data-lightbox>
-          <div class="tw-slider__track" data-slider-track>
-            <div class="tw-slider__slide" data-slider-slide>
-              <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 1">
-                <img class="demo-slide__img" alt="">
-                <h2>Slide 1</h2>
-                <p>Beispieltext, um Layout und Übergänge zu prüfen.</p>
-              </div>
-            </div>
-            <div class="tw-slider__slide" data-slider-slide>
-              <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 2">
-                <img class="demo-slide__img" alt="">
-                <h2>Slide 2</h2>
-                <p>Einheitliches Seitenverhältnis, Nav bleibt auf gleicher Höhe.</p>
-              </div>
-            </div>
-            <div class="tw-slider__slide" data-slider-slide>
-              <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 3">
-                <img class="demo-slide__img" alt="">
-                <h2>Slide 3</h2>
-                <p>Kurzer Inhalt.</p>
-              </div>
-            </div>
-            <div class="tw-slider__slide" data-slider-slide>
-              <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 4">
-                <img class="demo-slide__img" alt="">
-                <h2>Slide 4</h2>
-                <p>Per Wischgeste, Pfeiltasten oder Pfeil-Buttons navigierbar.</p>
-              </div>
-            </div>
-          </div>
-          <div class="tw-slider__nav">
-            <button class="tw-slider__arrow" data-slider-prev aria-label="Zurück">‹</button>
-            <div class="tw-slider__dots" data-slider-dots></div>
-            <button class="tw-slider__arrow" data-slider-next aria-label="Weiter">›</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </details>
-
-  <details class="tool-section" data-demo="demo-marquee">
-    <summary>Marquee <span class="desc">Endlos-Laufband mit Auto-Duplikation</span></summary>
-    <div class="tool-body">
-      <div class="combo-panel">
-        <label for="marquee-combo-select">Zusatz-Tool:</label>
-        <select id="marquee-combo-select">
-          <option value="none">Ohne Zusatz-Tool</option>
-          <option value="lightbox" selected>+ LightboxPopup (Klick auf Chip → Großansicht)</option>
-        </select>
-      </div>
-      <div id="demo-marquee">
-        <div class="tw-marquee" data-marquee data-lightbox>
-          <div class="tw-marquee__track" data-marquee-track>
-            <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-            <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-            <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-            <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </details>
-
-  <details class="tool-section" data-demo="demo-lightbox">
-    <summary>LightboxPopup <span class="desc">Bild-Grid mit Großansicht (eigenständig)</span></summary>
-    <div class="tool-body">
-      <div id="demo-lightbox">
-        <div class="demo-grid" data-lightbox>
-          <div class="demo-grid__item" data-lightbox-item data-lightbox-caption="Beschädigte Dosen"><img alt=""></div>
-          <div class="demo-grid__item" data-lightbox-item><img alt=""></div>
-          <div class="demo-grid__item" data-lightbox-item data-lightbox-caption="Cold Steel Schwert"><img alt=""></div>
-          <div class="demo-grid__item" data-lightbox-item><img alt=""></div>
-        </div>
-      </div>
-    </div>
-  </details>
+  <div id="stage"></div>
 </div>
 
 <script>
@@ -306,75 +246,229 @@
     });
   };
 
-  // Zusatz-Tool "LightboxPopup" ist über ein <select> pro Section live zu-
-  // und abschaltbar — dabei wird nur die Lightbox-Instanz erzeugt/zerstört,
-  // die Slider-/Marquee-Instanz bleibt unangetastet (kein Reset von Position
-  // bzw. Laufband beim Umschalten).
-  const sliderCombo  = document.getElementById('slider-combo-select');
-  const marqueeCombo = document.getElementById('marquee-combo-select');
-  let sliderLightbox  = null;
-  let marqueeLightbox = null;
+  const stage = document.getElementById('stage');
+  const pickerGrid = document.getElementById('picker-grid');
+  const pickerSelect = document.getElementById('picker-select');
+  const addToolSelect = document.getElementById('add-tool-select');
+  const pickerDone = document.getElementById('picker-done');
 
-  const applySliderCombo = () => {
-    sliderLightbox?.destroy();
-    sliderLightbox = null;
-    const enabled = sliderCombo.value === 'lightbox';
-    document.getElementById('demo-slider').classList.toggle('has-lightbox', enabled);
-    if (enabled) sliderLightbox = createLightbox('#demo-slider [data-lightbox]');
+  // Lightbox verbindet sich automatisch mit jeder bereits aktiven Section,
+  // die [data-lightbox] trägt — unabhängig von der Aktivierungsreihenfolge.
+  let lightboxActive = false;
+  const lightboxInstances = {};
+  const widgetInstances = { slider: null, marquee: null, lightbox: null };
+  const attachLightbox = (key) => {
+    if (!lightboxActive || lightboxInstances[key]) return;
+    const instance = createLightbox(`#${key} [data-lightbox]`);
+    if (instance) lightboxInstances[key] = instance;
+  };
+  const detachLightbox = (key) => {
+    lightboxInstances[key]?.destroy();
+    delete lightboxInstances[key];
   };
 
-  const applyMarqueeCombo = () => {
-    marqueeLightbox?.destroy();
-    marqueeLightbox = null;
-    const enabled = marqueeCombo.value === 'lightbox';
-    document.getElementById('demo-marquee').classList.toggle('has-lightbox', enabled);
-    if (enabled) marqueeLightbox = createLightbox('#demo-marquee [data-lightbox]');
+  const addSection = (html) => {
+    const section = document.createElement('div');
+    section.innerHTML = html;
+    stage.appendChild(section.firstElementChild);
   };
 
-  sliderCombo.addEventListener('change', applySliderCombo);
-  marqueeCombo.addEventListener('change', applyMarqueeCombo);
-
-  // Jede Section wird erst beim ersten Öffnen initialisiert (Details-Toggle).
-  const initializers = {
-    'demo-slider': () => {
-      fillImages('demo-slider');
-      createSlider('#demo-slider [data-slider]', {
-        loop: true,
-        autoHeight: true,
-        heightSelector: '.demo-inner',
-      });
-      applySliderCombo();
+  const TOOLS = {
+    slider: {
+      name: 'Slider',
+      desc: '"Peek"-Slider/Carousel mit Pfeilen, Dots und Swipe-Geste.',
+      activate() {
+        addSection(`
+          <div class="tool-section" id="demo-slider">
+            <div class="head">Slider <span class="desc">"Peek"-Slider/Carousel</span><button type="button" class="close" data-close aria-label="Slider deaktivieren">×</button></div>
+            <div class="tw-slider" data-slider data-lightbox>
+              <div class="tw-slider__track" data-slider-track>
+                <div class="tw-slider__slide" data-slider-slide>
+                  <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 1">
+                    <img class="demo-slide__img" alt="">
+                    <h2>Slide 1</h2>
+                    <p>Beispieltext, um Layout und Übergänge zu prüfen.</p>
+                  </div>
+                </div>
+                <div class="tw-slider__slide" data-slider-slide>
+                  <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 2">
+                    <img class="demo-slide__img" alt="">
+                    <h2>Slide 2</h2>
+                    <p>Einheitliches Seitenverhältnis, Nav bleibt auf gleicher Höhe.</p>
+                  </div>
+                </div>
+                <div class="tw-slider__slide" data-slider-slide>
+                  <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 3">
+                    <img class="demo-slide__img" alt="">
+                    <h2>Slide 3</h2>
+                    <p>Kurzer Inhalt.</p>
+                  </div>
+                </div>
+                <div class="tw-slider__slide" data-slider-slide>
+                  <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 4">
+                    <img class="demo-slide__img" alt="">
+                    <h2>Slide 4</h2>
+                    <p>Per Wischgeste, Pfeiltasten oder Pfeil-Buttons navigierbar.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="tw-slider__nav">
+                <button class="tw-slider__arrow" data-slider-prev aria-label="Zurück">‹</button>
+                <div class="tw-slider__dots" data-slider-dots></div>
+                <button class="tw-slider__arrow" data-slider-next aria-label="Weiter">›</button>
+              </div>
+            </div>
+          </div>
+        `);
+        fillImages('demo-slider');
+        widgetInstances.slider = createSlider('#demo-slider [data-slider]', {
+          loop: true,
+          autoHeight: true,
+          heightSelector: '.demo-inner',
+        });
+        attachLightbox('demo-slider');
+      },
+      deactivate() {
+        detachLightbox('demo-slider');
+        widgetInstances.slider?.destroy();
+        widgetInstances.slider = null;
+        document.getElementById('demo-slider')?.remove();
+      },
     },
-    'demo-marquee': () => {
-      fillImages('demo-marquee');
-      createMarquee('#demo-marquee [data-marquee]', { speed: 60, pauseOnHover: true });
-      applyMarqueeCombo();
+    marquee: {
+      name: 'Marquee',
+      desc: 'Endlos-Laufband mit Auto-Duplikation und Pause-on-Hover.',
+      activate() {
+        addSection(`
+          <div class="tool-section" id="demo-marquee">
+            <div class="head">Marquee <span class="desc">Endlos-Laufband mit Auto-Duplikation</span><button type="button" class="close" data-close aria-label="Marquee deaktivieren">×</button></div>
+            <div class="tw-marquee" data-marquee data-lightbox>
+              <div class="tw-marquee__track" data-marquee-track>
+                <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+                <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+                <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+                <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
+              </div>
+            </div>
+          </div>
+        `);
+        fillImages('demo-marquee');
+        widgetInstances.marquee = createMarquee('#demo-marquee [data-marquee]', { speed: 60, pauseOnHover: true });
+        attachLightbox('demo-marquee');
+      },
+      deactivate() {
+        detachLightbox('demo-marquee');
+        widgetInstances.marquee?.destroy();
+        widgetInstances.marquee = null;
+        document.getElementById('demo-marquee')?.remove();
+      },
     },
-    'demo-lightbox': () => {
-      fillImages('demo-lightbox');
-      createLightbox('#demo-lightbox [data-lightbox]');
+    lightbox: {
+      name: 'LightboxPopup',
+      desc: 'Bild-Grid mit Klick-Großansicht; koppelt sich an bereits aktive Slider-/Marquee-Sections.',
+      activate() {
+        addSection(`
+          <div class="tool-section" id="demo-lightbox">
+            <div class="head">LightboxPopup <span class="desc">Bild-Grid mit Großansicht</span><button type="button" class="close" data-close aria-label="LightboxPopup deaktivieren">×</button></div>
+            <div class="demo-grid" data-lightbox>
+              <div class="demo-grid__item" data-lightbox-item data-lightbox-caption="Beschädigte Dosen"><img alt=""></div>
+              <div class="demo-grid__item" data-lightbox-item><img alt=""></div>
+              <div class="demo-grid__item" data-lightbox-item data-lightbox-caption="Cold Steel Schwert"><img alt=""></div>
+              <div class="demo-grid__item" data-lightbox-item><img alt=""></div>
+            </div>
+          </div>
+        `);
+        fillImages('demo-lightbox');
+        widgetInstances.lightbox = createLightbox('#demo-lightbox [data-lightbox]');
+        lightboxActive = true;
+        // Rückwirkend an bereits aktive Slider-/Marquee-Sections koppeln.
+        attachLightbox('demo-slider');
+        attachLightbox('demo-marquee');
+      },
+      deactivate() {
+        lightboxActive = false;
+        // Entkoppelt sich wieder von Slider/Marquee, die bleiben aktiv.
+        detachLightbox('demo-slider');
+        detachLightbox('demo-marquee');
+        widgetInstances.lightbox?.destroy();
+        widgetInstances.lightbox = null;
+        document.getElementById('demo-lightbox')?.remove();
+      },
     },
   };
 
-  const initialized = new Set();
-  document.querySelectorAll('details.tool-section').forEach((details) => {
-    const key = details.dataset.demo;
-    const runInit = () => {
-      if (details.open && !initialized.has(key)) {
-        initialized.add(key);
-        initializers[key]?.();
-      }
-    };
-    details.addEventListener('toggle', runInit);
-    runInit(); // Section, die bereits offen ist (z.B. per [open]-Attribut), sofort initialisieren.
+  const active = new Set();
+
+  const renderButtons = () => {
+    pickerGrid.innerHTML = '';
+    Object.entries(TOOLS).forEach(([key, tool]) => {
+      const card = document.createElement('div');
+      card.className = 'picker-card';
+      card.innerHTML = `
+        <div class="name">${tool.name}</div>
+        <div class="desc">${tool.desc}</div>
+        <button type="button">Aktivieren</button>
+      `;
+      card.querySelector('button').addEventListener('click', () => activateTool(key));
+      pickerGrid.appendChild(card);
+    });
+  };
+
+  const renderSelect = () => {
+    const remaining = Object.keys(TOOLS).filter((k) => !active.has(k));
+    addToolSelect.innerHTML = '<option value="" disabled selected>Tool wählen …</option>'
+      + remaining.map((k) => `<option value="${k}">${TOOLS[k].name} — ${TOOLS[k].desc}</option>`).join('');
+  };
+
+  const updatePicker = () => {
+    if (active.size === 0) {
+      pickerGrid.hidden = false;
+      pickerSelect.hidden = true;
+      pickerDone.hidden = true;
+      renderButtons();
+      return;
+    }
+    pickerGrid.hidden = true;
+    const remaining = Object.keys(TOOLS).filter((k) => !active.has(k));
+    if (remaining.length === 0) {
+      pickerSelect.hidden = true;
+      pickerDone.hidden = false;
+    } else {
+      pickerSelect.hidden = false;
+      pickerDone.hidden = true;
+      renderSelect();
+    }
+  };
+
+  function activateTool(key) {
+    if (active.has(key)) return;
+    active.add(key);
+    TOOLS[key].activate();
+    updatePicker();
+  }
+
+  function deactivateTool(key) {
+    if (!active.has(key)) return;
+    active.delete(key);
+    TOOLS[key].deactivate();
+    updatePicker();
+  }
+
+  addToolSelect.addEventListener('change', () => {
+    const key = addToolSelect.value;
+    if (key) activateTool(key);
   });
 
-  document.getElementById('expand-all').addEventListener('click', () => {
-    document.querySelectorAll('details.tool-section').forEach((d) => { d.open = true; });
+  // Deaktivieren über den ×-Button im Section-Kopf, delegiert auf die Stage.
+  stage.addEventListener('click', (e) => {
+    const closeBtn = e.target.closest('[data-close]');
+    if (!closeBtn) return;
+    const section = closeBtn.closest('.tool-section');
+    const key = Object.keys(TOOLS).find((k) => section.id === `demo-${k}`);
+    if (key) deactivateTool(key);
   });
-  document.getElementById('collapse-all').addEventListener('click', () => {
-    document.querySelectorAll('details.tool-section').forEach((d) => { d.open = false; });
-  });
+
+  updatePicker();
 </script>
 </body>
 </html>
