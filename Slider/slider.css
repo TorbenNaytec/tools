@@ -1,5 +1,7 @@
 /* Generisches Slider-Skeleton — reines CSS, kein Build-Schritt nötig.
-   CSS-Variablen auf das eigene Design-System mappen. */
+   CSS-Variablen auf das eigene Design-System mappen.
+   Funktionaler Teil (Layout/Mechanik) ist direkt mit ausgeliefert, nicht
+   per @import nachgeladen — Quelle/Dokumentation davon: funktion.css. */
 
 .tw-slider {
   --slider-gap: 24px;

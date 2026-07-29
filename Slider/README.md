@@ -1,19 +1,40 @@
 # Slider
 
 Wiederverwendbarer "Peek"-Slider/Carousel. Reines JavaScript (ES-Modul, keine
-Abhängigkeiten) + reines CSS — kein Build-Schritt nötig, einfach beide
-Dateien in ein Projekt kopieren.
+Abhängigkeiten) + reines CSS — kein Build-Schritt nötig, einfach `slider.js`
+und `slider.css` in ein Projekt kopieren.
 
-Verhalten (`slider.js`) und Aussehen (`slider.css`) sind strikt getrennt:
-Das Script kennt keine Projekt-Klassennamen, sondern steuert nur über
-`data-*`-Attribute. Das CSS liefert ein neutrales Skeleton zum Anpassen
-über CSS-Variablen — kann auch komplett durch eigenes CSS ersetzt werden,
-solange die `data-*`-Struktur erhalten bleibt.
+Verhalten (`slider.js`), Layout/Mechanik (`funktion.css`) und Aussehen
+(`slider.css`) sind strikt getrennt: Das Script kennt keine
+Projekt-Klassennamen, sondern steuert nur über `data-*`-Attribute.
+`funktion.css` enthält nur das CSS, das der Slider zwingend braucht, um zu
+funktionieren — daran sollte nichts geändert werden:
+
+- `.tw-slider`: `position: relative` + `overflow: hidden`, damit nur der
+  aktive Ausschnitt des Tracks sichtbar ist.
+- `.tw-slider__track`: `display: flex` + `gap` + `transition` auf
+  `transform`, das eigentliche Slide-Mechanismus (JS setzt `transform`,
+  CSS animiert es).
+- `.tw-slider__slide`: `width: 100%` + `flex-shrink: 0`, damit jeder Slide
+  exakt eine Kachel im Track belegt.
+- `.tw-slider__nav` / `.tw-slider__dots`: `display: flex` +
+  `align-items`/`justify-content`, um Pfeile und Dots zu zentrieren.
+- `.tw-slider__arrow`: feste `width`/`height` + `display: grid` +
+  `place-items: center` (Icon zentrieren) + `cursor: pointer`.
+- `.tw-slider__dot`: feste `width`/`height` + `cursor: pointer`.
+
+`slider.css` liefert das neutrale Skeleton zum Anpassen über
+CSS-Variablen (Farben, Formen, Übergangs-Effekte) — der funktionale Teil
+ist direkt mit ausgeliefert (kein `@import`, keine zusätzliche
+HTTP-Anfrage). `funktion.css` liegt zusätzlich als eigene Datei bei und
+dient als Referenz/Dokumentation, welcher Teil des CSS zwingend nötig ist
+und beim Ersetzen von `slider.css` durch eigenes CSS erhalten bleiben
+muss — eingebunden wird nur `slider.css`.
 
 ## Einbauen
 
 1. `slider.js` und `slider.css` ins Projekt kopieren.
-2. CSS einbinden, JS als Modul importieren.
+2. `slider.css` einbinden, JS als Modul importieren.
 3. Markup nach folgendem Vertrag aufbauen:
 
 ```html
