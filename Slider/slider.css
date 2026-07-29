@@ -14,12 +14,12 @@
   --slider-transition: transform .5s cubic-bezier(.4, 0, .2, 1);
 
   position: relative;
+  overflow: hidden;
 }
 
 .tw-slider__track {
   display: flex;
   gap: var(--slider-gap);
-  overflow: hidden;
   will-change: transform;
   transition: var(--slider-transition);
 }

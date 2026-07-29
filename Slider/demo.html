@@ -51,6 +51,10 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    aspect-ratio: 4 / 3;
+  }
+  @media (max-width: 600px) {
+    .demo-slide { aspect-ratio: 3 / 4; }
   }
   .demo-slide__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .demo-slide::after {
@@ -69,9 +73,9 @@
     --slider-arrow-border: #1a1a1a;
     --slider-dot-active-color: #1a1a1a;
     --slider-dot-color: rgba(0,0,0,.25);
+    border-radius: 16px;
   }
   .tw-slider__track {
-    border-radius: 16px;
     transition: var(--slider-transition), height .35s ease;
   }
 
@@ -99,43 +103,49 @@
   <p class="hint">Reglern ändern → „Neu initialisieren" klicken, um die Optionen live zu testen.</p>
 
   <div class="panel">
-    <label><input type="checkbox" id="opt-loop" checked> Loop</label>
-    <label><input type="checkbox" id="opt-autoplay"> Autoplay (3s)</label>
-    <label><input type="checkbox" id="opt-autoheight" checked> Auto-Höhe</label>
-    <button id="reinit">Neu initialisieren</button>
+    <label title="Nach dem letzten Slide geht es zurück zum ersten (und umgekehrt)."><input type="checkbox" id="opt-loop" checked> Loop</label>
+    <label title="Wechselt automatisch alle 3 Sekunden zum nächsten Slide; pausiert bei Maus-Hover."><input type="checkbox" id="opt-autoplay"> Autoplay (3s)</label>
+    <label title="Container-Höhe passt sich animiert an die Höhe des aktiven Slides an."><input type="checkbox" id="opt-autoheight" checked> Auto-Höhe</label>
+    <label title="Navigation per Wischgeste (Touch) aktivieren."><input type="checkbox" id="opt-swipe" checked> Swipe</label>
+    <label title="Navigation mit den Pfeiltasten, wenn der Slider fokussiert ist."><input type="checkbox" id="opt-keyboard" checked> Tastatur</label>
+    <label title="Gibt bei jedem Slide-Wechsel den neuen Index in der Browser-Konsole aus."><input type="checkbox" id="opt-onchange"> onChange-Log (Konsole)</label>
+    <label title="Slide-Index, mit dem der Slider nach „Neu initialisieren“ startet (0 = erster Slide).">Start-Index
+      <input type="number" id="opt-startindex" value="0" min="0" max="3" style="width:48px;">
+    </label>
+    <button id="reinit" title="Zerstört die aktuelle Slider-Instanz und erstellt sie mit den oben gewählten Optionen neu.">Neu initialisieren</button>
   </div>
 
   <div class="tw-slider" data-slider>
     <div class="tw-slider__track" data-slider-track>
 
       <div class="tw-slider__slide" data-slider-slide>
-        <div class="demo-inner demo-slide" style="height:220px;">
-          <img class="demo-slide__img" src="../assets/images/sample-01.svg" alt="">
-          <h2>Slide 1 — normal</h2>
+        <div class="demo-inner demo-slide">
+          <img class="demo-slide__img" alt="">
+          <h2>Slide 1</h2>
           <p>Beispieltext, um Layout und Übergänge zu prüfen.</p>
         </div>
       </div>
 
       <div class="tw-slider__slide" data-slider-slide>
-        <div class="demo-inner demo-slide" style="height:320px;">
-          <img class="demo-slide__img" src="../assets/images/sample-02.svg" alt="">
-          <h2>Slide 2 — hoch</h2>
-          <p>Dieser Slide ist deutlich höher als die anderen — bei aktivierter
-             Auto-Höhe passt sich der Container an, sonst bleibt die Höhe fix.</p>
+        <div class="demo-inner demo-slide">
+          <img class="demo-slide__img" alt="">
+          <h2>Slide 2</h2>
+          <p>Einheitliches Seitenverhältnis (4:3 Desktop, 3:4 Mobile) — Nav bleibt
+             dadurch immer auf gleicher Höhe.</p>
         </div>
       </div>
 
       <div class="tw-slider__slide" data-slider-slide>
-        <div class="demo-inner demo-slide" style="height:180px;">
-          <img class="demo-slide__img" src="../assets/images/sample-03.svg" alt="">
-          <h2>Slide 3 — niedrig</h2>
+        <div class="demo-inner demo-slide">
+          <img class="demo-slide__img" alt="">
+          <h2>Slide 3</h2>
           <p>Kurzer Inhalt.</p>
         </div>
       </div>
 
       <div class="tw-slider__slide" data-slider-slide>
-        <div class="demo-inner demo-slide" style="height:260px;">
-          <img class="demo-slide__img" src="../assets/images/sample-04.svg" alt="">
+        <div class="demo-inner demo-slide">
+          <img class="demo-slide__img" alt="">
           <h2>Slide 4</h2>
           <p>Per Wischgeste (Touch), Pfeiltasten (bei Fokus) oder Pfeil-Buttons navigierbar.</p>
         </div>
@@ -159,6 +169,25 @@
 <script type="module">
   import { createSlider } from './slider.js';
 
+  // Bildquelle konfigurierbar:
+  //  - String  → Ordnerpfad, wird mit IMAGE_FILES zu vollständigen Pfaden kombiniert
+  //  - Array   → direkte Liste von Pfaden/URLs, eins pro Slide (Reihenfolge = Slide-Reihenfolge)
+  const IMAGE_SOURCE = '../img';
+  const IMAGE_FILES = [
+    'beschädigte Dosen3.png',
+    'flowerthrow.png',
+    'cst-88hs_cold_steel_schwert_competition_cutting_sword_2020SU89OjjQtQ7uP_600x600.jpg',
+    'schild.jpg.webp',
+  ];
+
+  const resolveImageSrcs = (source, files) =>
+    Array.isArray(source) ? source : files.map((f) => `${source}/${f}`);
+
+  document.querySelectorAll('.demo-slide__img').forEach((img, i) => {
+    const srcs = resolveImageSrcs(IMAGE_SOURCE, IMAGE_FILES);
+    img.src = srcs[i % srcs.length];
+  });
+
   let instance = null;
 
   const init = () => {
@@ -168,6 +197,12 @@
       autoplay: document.getElementById('opt-autoplay').checked ? 3000 : false,
       autoHeight: document.getElementById('opt-autoheight').checked,
       heightSelector: '.demo-inner',
+      swipe: document.getElementById('opt-swipe').checked,
+      keyboard: document.getElementById('opt-keyboard').checked,
+      startIndex: Number(document.getElementById('opt-startindex').value) || 0,
+      onChange: document.getElementById('opt-onchange').checked
+        ? (i) => console.log('onChange → Slide', i)
+        : null,
     });
   };
 
