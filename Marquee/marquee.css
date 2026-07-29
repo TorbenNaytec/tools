@@ -1,0 +1,32 @@
+/* Generisches Marquee-Skeleton — reines CSS, kein Build-Schritt nötig.
+   Die Animationsdauer wird von marquee.js aus der Inhaltsbreite berechnet
+   und als --marquee-duration gesetzt; hier nur Basiswerte/Fallback. */
+
+.tw-marquee {
+  --marquee-gap: 32px;
+  --marquee-duration: 30s;
+
+  position: relative;
+  overflow: hidden;
+}
+
+.tw-marquee__track {
+  display: flex;
+  align-items: center;
+  gap: var(--marquee-gap);
+  width: max-content;
+  animation: tw-marquee var(--marquee-duration) linear infinite;
+}
+
+.tw-marquee.is-paused .tw-marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes tw-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tw-marquee__track { animation: none; }
+}

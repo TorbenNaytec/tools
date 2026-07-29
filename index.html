@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Tools — Übersicht &amp; Testcenter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #f5f5f3;
+    color: #1a1a1a;
+    display: flex;
+    min-height: 100vh;
+  }
+  aside {
+    width: 260px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid #e2e2e0;
+    padding: 24px 16px;
+    overflow-y: auto;
+  }
+  aside h1 { font-size: 16px; margin: 0 0 4px; }
+  aside p.hint { font-size: 12px; color: #777; margin: 0 0 20px; line-height: 1.4; }
+
+  .tool-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 1px solid #e2e2e0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .tool-card:hover { border-color: #1a1a1a; }
+  .tool-card.is-active { border-color: #1a1a1a; background: #f0f0ee; }
+  .tool-card .name { font-weight: 600; font-size: 14px; }
+  .tool-card .desc { font-size: 12px; color: #666; margin-top: 4px; line-height: 1.4; }
+  .tool-card .links { margin-top: 8px; display: flex; gap: 10px; }
+  .tool-card .links a { font-size: 11px; color: #3b5bdb; text-decoration: none; }
+  .tool-card .links a:hover { text-decoration: underline; }
+
+  main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .topbar {
+    padding: 14px 20px;
+    border-bottom: 1px solid #e2e2e0;
+    background: #fff;
+    font-size: 13px;
+    color: #555;
+  }
+  .topbar strong { color: #1a1a1a; }
+  iframe { flex: 1; border: none; width: 100%; background: #fff; }
+
+  .empty {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    color: #999;
+    font-size: 14px;
+  }
+
+  .file-warning {
+    background: #fff3cd;
+    color: #664d03;
+    border-bottom: 1px solid #ffe69c;
+    padding: 10px 20px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .file-warning code {
+    background: rgba(0,0,0,.06);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="file-warning" id="file-warning" hidden>
+  ⚠️ Diese Seite läuft gerade über <code>file://</code> — die Demos nutzen ES-Module,
+  die Browser dort blockieren (leere/inaktive Demo). Im Ordner <code>Tools/</code>
+  einmalig <code>npx --yes serve .</code> ausführen und die angezeigte
+  <code>http://localhost:…</code>-Adresse öffnen.
+</div>
+
+<aside>
+  <h1>Tools</h1>
+  <p class="hint">
+    Sammlung wiederverwendbarer, projektunabhängiger UI-Bausteine.
+    Jeder Ordner enthält Script + CSS + README + Demo. Ordner links auswählen,
+    Demo läuft rechts direkt zum Testen.
+  </p>
+  <div id="tool-list"></div>
+</aside>
+
+<main>
+  <div class="topbar" id="topbar">Kein Tool ausgewählt.</div>
+  <div class="empty" id="empty">← Tool auswählen, um die Demo zu laden.</div>
+  <iframe id="frame" hidden></iframe>
+</main>
+
+<script>
+  if (location.protocol === 'file:') {
+    document.getElementById('file-warning').hidden = false;
+  }
+
+  // Registry aller Tools. Neuen Ordner? Hier einfach einen Eintrag ergänzen —
+  // Name muss dem Ordnernamen entsprechen.
+  const TOOLS = [
+    {
+      name: 'Slider',
+      description: 'Wiederverwendbarer "Peek"-Slider/Carousel. Dots, Pfeile, Touch-Swipe, Tastatur, Auto-Höhe.',
+    },
+    {
+      name: 'Marquee',
+      description: 'Endlos-Laufband mit automatischer Inhalts-Vervielfachung und konstanter Geschwindigkeit.',
+    },
+  ];
+
+  const list  = document.getElementById('tool-list');
+  const frame = document.getElementById('frame');
+  const empty = document.getElementById('empty');
+  const topbar = document.getElementById('topbar');
+
+  const select = (tool, card) => {
+    document.querySelectorAll('.tool-card').forEach((c) => c.classList.remove('is-active'));
+    card.classList.add('is-active');
+    topbar.innerHTML = `<strong>${tool.name}</strong> — ${tool.description}`;
+    frame.src = `${tool.name}/demo.html`;
+    frame.hidden = false;
+    empty.hidden = true;
+  };
+
+  TOOLS.forEach((tool) => {
+    const card = document.createElement('button');
+    card.className = 'tool-card';
+    card.innerHTML = `
+      <div class="name">${tool.name}</div>
+      <div class="desc">${tool.description}</div>
+      <div class="links">
+        <a href="${tool.name}/demo.html" target="_blank" onclick="event.stopPropagation()">Demo (neuer Tab)</a>
+        <a href="${tool.name}/README.md" target="_blank" onclick="event.stopPropagation()">README</a>
+      </div>
+    `;
+    card.addEventListener('click', () => select(tool, card));
+    list.appendChild(card);
+  });
+
+  // Erstes Tool direkt anzeigen.
+  if (TOOLS.length) list.querySelector('.tool-card').click();
+</script>
+</body>
+</html>

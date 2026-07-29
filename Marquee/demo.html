@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Marquee — Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="marquee.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #f5f5f3;
+    color: #1a1a1a;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p.hint { color: #666; margin-top: 0; margin-bottom: 28px; font-size: 14px; }
+
+  .panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e2e2e0;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    font-size: 14px;
+  }
+  .panel label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .panel input[type="range"] { width: 120px; }
+  .panel button {
+    margin-left: auto;
+    border: 1px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .tw-marquee {
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    padding: 20px 0;
+  }
+  .demo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  .demo-chip__img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+
+  .file-warning {
+    background: #fff3cd;
+    color: #664d03;
+    border: 1px solid #ffe69c;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .file-warning code { background: rgba(0,0,0,.06); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="file-warning" id="file-warning" hidden>
+    ⚠️ Läuft über <code>file://</code> — ES-Module werden vom Browser blockiert,
+    die Demo bleibt inaktiv. Im übergeordneten <code>Tools/</code>-Ordner einmalig
+    <code>npx --yes serve .</code> ausführen und über <code>http://localhost:…</code> öffnen.
+  </div>
+  <h1>Marquee — Testseite</h1>
+  <p class="hint">Reglern ändern → wirkt sofort (Geschwindigkeit/Richtung bauen das Laufband neu auf).</p>
+
+  <div class="panel">
+    <label>Geschwindigkeit
+      <input type="range" id="opt-speed" min="20" max="200" step="10" value="60">
+      <span id="speed-val">60</span> px/s
+    </label>
+    <label><input type="checkbox" id="opt-reverse"> Richtung umkehren</label>
+    <label><input type="checkbox" id="opt-pause" checked> Pause bei Hover</label>
+    <button id="reinit">Neu initialisieren</button>
+  </div>
+
+  <div class="tw-marquee" data-marquee>
+    <div class="tw-marquee__track" data-marquee-track>
+      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-01.svg" alt="">Wiederverwendbar</span>
+      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-02.svg" alt="">Keine Abhängigkeiten</span>
+      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-03.svg" alt="">Konstante Geschwindigkeit</span>
+      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-04.svg" alt="">Auto-Duplikation</span>
+      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-05.svg" alt="">Pause bei Hover</span>
+      <span class="demo-chip" data-marquee-item><img class="demo-chip__img" src="../assets/images/sample-06.svg" alt="">Reduced-Motion-fähig</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  if (location.protocol === 'file:') {
+    document.getElementById('file-warning').hidden = false;
+  }
+</script>
+<script type="module">
+  import { createMarquee } from './marquee.js';
+
+  let instance = null;
+  const speedInput = document.getElementById('opt-speed');
+  const speedVal   = document.getElementById('speed-val');
+
+  const init = () => {
+    instance?.destroy();
+    instance = createMarquee('[data-marquee]', {
+      speed: Number(speedInput.value),
+      reverse: document.getElementById('opt-reverse').checked,
+      pauseOnHover: document.getElementById('opt-pause').checked,
+    });
+  };
+
+  speedInput.addEventListener('input', () => { speedVal.textContent = speedInput.value; });
+  document.getElementById('reinit').addEventListener('click', init);
+  init();
+</script>
+</body>
+</html>

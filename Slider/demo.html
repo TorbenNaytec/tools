@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Slider — Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="slider.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #f5f5f3;
+    color: #1a1a1a;
+    padding: 32px 16px 80px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  p.hint { color: #666; margin-top: 0; margin-bottom: 28px; font-size: 14px; }
+
+  .panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #e2e2e0;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    font-size: 14px;
+  }
+  .panel label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .panel button {
+    margin-left: auto;
+    border: 1px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .demo-slide {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    padding: 32px 28px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .demo-slide__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .demo-slide::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.65), rgba(0,0,0,.05) 60%);
+    z-index: 1;
+  }
+  .demo-slide h2, .demo-slide p { position: relative; z-index: 2; margin: 0; }
+  .demo-slide h2 { margin-bottom: 8px; font-size: 20px; }
+  .demo-slide p { opacity: .85; font-size: 14px; line-height: 1.5; }
+
+  .tw-slider {
+    --slider-arrow-bg: #1a1a1a;
+    --slider-arrow-color: #fff;
+    --slider-arrow-border: #1a1a1a;
+    --slider-dot-active-color: #1a1a1a;
+    --slider-dot-color: rgba(0,0,0,.25);
+  }
+  .tw-slider__track {
+    border-radius: 16px;
+    transition: var(--slider-transition), height .35s ease;
+  }
+
+  .file-warning {
+    background: #fff3cd;
+    color: #664d03;
+    border: 1px solid #ffe69c;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+  .file-warning code { background: rgba(0,0,0,.06); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="file-warning" id="file-warning" hidden>
+    ⚠️ Läuft über <code>file://</code> — ES-Module werden vom Browser blockiert,
+    die Demo bleibt inaktiv. Im übergeordneten <code>Tools/</code>-Ordner einmalig
+    <code>npx --yes serve .</code> ausführen und über <code>http://localhost:…</code> öffnen.
+  </div>
+  <h1>Slider — Testseite</h1>
+  <p class="hint">Reglern ändern → „Neu initialisieren" klicken, um die Optionen live zu testen.</p>
+
+  <div class="panel">
+    <label><input type="checkbox" id="opt-loop" checked> Loop</label>
+    <label><input type="checkbox" id="opt-autoplay"> Autoplay (3s)</label>
+    <label><input type="checkbox" id="opt-autoheight" checked> Auto-Höhe</label>
+    <button id="reinit">Neu initialisieren</button>
+  </div>
+
+  <div class="tw-slider" data-slider>
+    <div class="tw-slider__track" data-slider-track>
+
+      <div class="tw-slider__slide" data-slider-slide>
+        <div class="demo-inner demo-slide" style="height:220px;">
+          <img class="demo-slide__img" src="../assets/images/sample-01.svg" alt="">
+          <h2>Slide 1 — normal</h2>
+          <p>Beispieltext, um Layout und Übergänge zu prüfen.</p>
+        </div>
+      </div>
+
+      <div class="tw-slider__slide" data-slider-slide>
+        <div class="demo-inner demo-slide" style="height:320px;">
+          <img class="demo-slide__img" src="../assets/images/sample-02.svg" alt="">
+          <h2>Slide 2 — hoch</h2>
+          <p>Dieser Slide ist deutlich höher als die anderen — bei aktivierter
+             Auto-Höhe passt sich der Container an, sonst bleibt die Höhe fix.</p>
+        </div>
+      </div>
+
+      <div class="tw-slider__slide" data-slider-slide>
+        <div class="demo-inner demo-slide" style="height:180px;">
+          <img class="demo-slide__img" src="../assets/images/sample-03.svg" alt="">
+          <h2>Slide 3 — niedrig</h2>
+          <p>Kurzer Inhalt.</p>
+        </div>
+      </div>
+
+      <div class="tw-slider__slide" data-slider-slide>
+        <div class="demo-inner demo-slide" style="height:260px;">
+          <img class="demo-slide__img" src="../assets/images/sample-04.svg" alt="">
+          <h2>Slide 4</h2>
+          <p>Per Wischgeste (Touch), Pfeiltasten (bei Fokus) oder Pfeil-Buttons navigierbar.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tw-slider__nav">
+      <button class="tw-slider__arrow" data-slider-prev aria-label="Zurück">‹</button>
+      <div class="tw-slider__dots" data-slider-dots></div>
+      <button class="tw-slider__arrow" data-slider-next aria-label="Weiter">›</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  if (location.protocol === 'file:') {
+    document.getElementById('file-warning').hidden = false;
+  }
+</script>
+<script type="module">
+  import { createSlider } from './slider.js';
+
+  let instance = null;
+
+  const init = () => {
+    instance?.destroy();
+    instance = createSlider('[data-slider]', {
+      loop: document.getElementById('opt-loop').checked,
+      autoplay: document.getElementById('opt-autoplay').checked ? 3000 : false,
+      autoHeight: document.getElementById('opt-autoheight').checked,
+      heightSelector: '.demo-inner',
+    });
+  };
+
+  document.getElementById('reinit').addEventListener('click', init);
+  init();
+</script>
+</body>
+</html>
