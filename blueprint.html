@@ -22,13 +22,9 @@
   h1 { font-size: 22px; margin-bottom: 4px; }
   p.hint { color: #666; margin-top: 0; margin-bottom: 24px; font-size: 14px; line-height: 1.5; }
 
-  /* Picker-Aussehen (Karten/Select/Fertig-Hinweis) kommt aus blueprintbox.css
-     über --blueprint-*-Variablen; hier nur Seitenabstand für die Root-Box. */
   #blueprint-root [data-blueprint-grid],
   #blueprint-root [data-blueprint-tree],
-  #blueprint-root [data-blueprint-select],
   #blueprint-root [data-blueprint-done] { margin-bottom: 24px; }
-
 
   .tool-section {
     background: #fff;
@@ -36,6 +32,10 @@
     border-radius: 12px;
     margin-bottom: 16px;
     padding: 16px 20px 24px;
+  }
+  .tool-section .tool-section {
+    background: #fafaf9;
+    margin-left: 12px;
   }
   .tool-section .head {
     font-weight: 600;
@@ -60,6 +60,35 @@
   }
   .tool-section .head .close:hover { border-color: #c33; color: #c33; }
 
+  .tool-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    background: #f5f5f3;
+    border: 1px solid #e2e2e0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 14px;
+    font-size: 12px;
+  }
+  .tool-controls:empty { display: none; }
+  .tool-controls__form { display: contents; }
+  .tool-controls__item { display: flex; align-items: center; gap: 6px; color: #444; }
+  .tool-controls__item input,
+  .tool-controls__item select { font-size: 12px; }
+  .tool-controls__item input { width: 56px; }
+  .tool-controls__submit {
+    border: 1px solid #1a1a1a;
+    background: #1a1a1a;
+    color: #fff;
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .tool-controls__submit:hover { background: #333; }
+
   .demo-slide {
     position: relative;
     overflow: hidden;
@@ -71,7 +100,7 @@
     justify-content: flex-end;
     aspect-ratio: 4 / 3;
   }
-  #demo-slider [data-lightbox-item] { cursor: pointer; }
+  [data-lightbox-item] { cursor: pointer; }
   @media (max-width: 600px) {
     .demo-slide { aspect-ratio: 3 / 4; }
   }
@@ -96,15 +125,25 @@
   }
   .tw-slider__track { transition: var(--slider-transition), height .35s ease; }
 
-  .tw-marquee {
-    border-top: 1px solid #ddd;
-    border-bottom: 1px solid #ddd;
-    padding: 20px 0;
+  /* Featured-Modus: kleine Peek-Slides sollen die Zeile lückenlos füllen
+     (wie im Referenz-Layout mit dichten, beschnittenen Kacheln) statt durch
+     ihr eigenes aspect-ratio deutlich niedriger als das große Bild zu bleiben
+     und darunter Leerraum zu lassen. object-fit: cover übernimmt den
+     Beschnitt bereits. */
+  .tw-slider[data-slider-mode="featured"] .tw-slider__slide:not(.is-active) .demo-slide {
+    height: 100%;
+    aspect-ratio: auto;
   }
-  /* Marquee als eigene Slide (siehe marqueeSlideMarkup): keine zusätzlichen
-     Rahmen/Innenabstände von .tw-marquee, .demo-slide liefert bereits
-     Seitenverhältnis/Rundung/Overflow-Clipping wie bei den anderen Slides. */
-  .slider-inline-marquee { border: none; padding: 0; justify-content: center; }
+
+  .tw-marquee { padding: 12px 0; }
+  /* Marquee als Slide im Slider: kein eigenes Seitenverhältnis/Rahmen von
+     .tw-marquee nötig, .demo-slide liefert das schon (Slide-Kontext). */
+  .slider-inline-marquee { padding: 0; justify-content: center; }
+  .slider-inline-marquee::after { display: none; }
+
+  /* Slider/Marquee als Item eines Marquee: feste Breite, da Marquee-Items
+     sich sonst am Inhalt orientieren (Slider/Marquee brauchen eine Basis). */
+  .marquee-inline-host { width: 320px; flex-shrink: 0; }
 
   .demo-chip {
     position: relative;
@@ -126,15 +165,6 @@
     line-height: 1.3;
     background: linear-gradient(to bottom, rgba(0,0,0,.65), transparent);
   }
-  #demo-marquee [data-lightbox-item] { cursor: pointer; }
-
-  .demo-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 12px;
-  }
-  .demo-grid__item { border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3; cursor: pointer; }
-  .demo-grid__item img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   .file-warning {
     background: #fff3cd;
@@ -159,15 +189,12 @@
 
   <h1>Tools — Blueprint</h1>
   <p class="hint">
-    Leere Fläche zum Start: erst ein Tool per Klick aktivieren, danach weitere
-    über das Auswahlfeld ergänzen. Die Zu-/Abschalt-Steuerung übernimmt
-    <strong>BlueprintBox</strong> (<code>BlueprintBox/blueprintbox.js</code>).
-    <strong>LightboxPopup</strong> koppelt sich automatisch an bereits aktive
-    Slider-/Marquee-Sections. Sind <strong>Slider</strong> und
-    <strong>Marquee</strong> gleichzeitig aktiv, bekommt der Slider direkt in
-    JS eine zusätzliche <code>tw-slider__slide</code> mit einer echten
-    Marquee-Instanz darin — unabhängig davon, welches der beiden Tools zuerst
-    zugeschaltet wurde.
+    Slider und Marquee sind als Stamm wählbar und beliebig tief ineinander
+    schachtelbar. Sonderfall Slider + Marquee: das Marquee läuft dann als
+    echte Slide direkt im Slider (nicht als separate Section). LightboxPopup
+    gilt projektweit für alle Bilder gleichzeitig — deshalb nur am Stamm als
+    Karte wählbar, nicht auf jeder Verschachtelungsebene erneut. Gesteuert
+    wird jede Ebene über <strong>BlueprintBox</strong> (<code>createChildBox</code>).
   </p>
 
   <div id="blueprint-root"></div>
@@ -194,235 +221,337 @@
   ];
   const srcs = IMAGE_FILES.map((f) => `${IMAGE_SOURCE}/${f}`);
 
-  const fillImages = (containerId) => {
-    document.querySelectorAll(`#${containerId} img`).forEach((img, i) => {
-      img.src = srcs[i % srcs.length];
-    });
+  const fillImages = (containerEl) => {
+    containerEl.querySelectorAll('img').forEach((img, i) => { img.src = srcs[i % srcs.length]; });
   };
 
-  // Lightbox verbindet sich automatisch mit jeder bereits aktiven Section,
-  // die [data-lightbox] trägt — unabhängig von der Aktivierungsreihenfolge.
-  let lightboxActive = false;
-  const lightboxInstances = {};
-  const widgetInstances = { slider: null, marquee: null, lightbox: null };
-  const attachLightbox = (key) => {
-    if (!lightboxActive || lightboxInstances[key]) return;
-    const instance = createLightbox(`#${key} [data-lightbox]`);
-    if (instance) lightboxInstances[key] = instance;
-  };
-  const detachLightbox = (key) => {
-    lightboxInstances[key]?.destroy();
-    delete lightboxInstances[key];
-  };
-
-  // Marquee als eigene Slide im Slider: kein eigenes Tool/keine Kind-Box —
-  // Slider und Marquee erzeugen/entfernen die zusätzliche Slide direkt in
-  // JS, reaktiv auf den Aktiv-Status des jeweils anderen (genau wie die
-  // Lightbox-Kopplung oben). slider.js legt seine Slide-/Dot-Listen einmalig
-  // bei createSlider() an — deshalb entscheidet TOOLS.slider.activate direkt
-  // beim Aufbau (per rootApi.isActive('marquee') als Input), ob die
-  // Marquee-Slide von Anfang an Teil des Tracks ist. Schaltet Marquee erst
-  // später dazu/weg, muss der Slider einmalig neu aufgebaut werden, damit er
-  // die neue Slide-Anzahl kennt.
-  let marqueeSlideEl = null;
-  let marqueeInstance = null;
-
-  const marqueeSlideMarkup = () => `
+  const chip = (n) => `
+    <span class="demo-chip" data-marquee-item data-lightbox-item data-lightbox-caption="Chip ${n}">
+      <img class="demo-chip__img" alt=""><span class="demo-chip__label"></span>
+    </span>
+  `;
+  const slide = (n) => `
     <div class="tw-slider__slide" data-slider-slide>
-      <div class="demo-inner demo-slide tw-marquee slider-inline-marquee" data-marquee>
-        <div class="tw-marquee__track" data-marquee-track>
-          <span class="demo-chip" data-marquee-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-          <span class="demo-chip" data-marquee-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-          <span class="demo-chip" data-marquee-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-          <span class="demo-chip" data-marquee-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-        </div>
+      <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide ${n}">
+        <img class="demo-slide__img" alt="">
+        <h2>Slide ${n}</h2>
+        <p>Beispieltext ${n}, um Layout und Übergänge zu prüfen.</p>
+      </div>
+    </div>
+  `;
+  // Roh-Markup ohne die BlueprintBox-Section drumherum — wird sowohl für den
+  // Stamm/Standalone-Fall (TOOLS.slider/marquee) als auch fürs Einhängen als
+  // natives Element in eine fremde Sammlung (makeCollectionChildTool) genutzt.
+  const rawSliderMarkup = () => `
+    <div class="tw-slider" data-slider>
+      <div class="tw-slider__track" data-slider-track>
+        ${[1, 2, 3, 4].map(slide).join('')}
+      </div>
+      <div class="tw-slider__nav">
+        <button class="tw-slider__arrow" data-slider-prev aria-label="Zurück">‹</button>
+        <div class="tw-slider__dots" data-slider-dots></div>
+        <button class="tw-slider__arrow" data-slider-next aria-label="Weiter">›</button>
+      </div>
+    </div>
+  `;
+  const rawMarqueeMarkup = () => `
+    <div class="tw-marquee" data-marquee>
+      <div class="tw-marquee__track" data-marquee-track>
+        ${[1, 2, 3, 4].map(chip).join('')}
       </div>
     </div>
   `;
 
-  const mountMarqueeInstance = () => {
-    marqueeSlideEl.querySelectorAll('img').forEach((img, i) => { img.src = srcs[i % srcs.length]; });
-    marqueeInstance = createMarquee(marqueeSlideEl.querySelector('[data-marquee]'), { speed: 60, pauseOnHover: true });
+  // Generische Registry: jedes Tool ist an jeder Stelle im Baum (Stamm, Ast,
+  // Blatt) über dieselben drei Einträge aktivierbar. Jede activate()-Funktion
+  // rendert ihren eigenen [data-tool-id]-Abschnitt per api.addSection() und
+  // spannt darin per api.createChildBox() sofort ihre eigene Kind-Box auf —
+  // dadurch ist jede Ebene wieder mit allen drei Tools kombinierbar, beliebig
+  // tief. Zustand (Instanzen/Kind-Box) hängt am jeweiligen Section-Element
+  // selbst (__destroy), nicht an Modul-Variablen — sonst würden mehrere
+  // gleichzeitige Instanzen desselben Tools (z.B. Slider in Marquee in
+  // Slider) sich gegenseitig überschreiben.
+  // Controls-Leiste: pro aktivierter Section ein paar Regler für die
+  // Kernvariablen des jeweiligen Tools (Bilderanzahl, Tempo). Rein additiv —
+  // ändert nur CSS-Variablen auf dem Tool-Root bzw. ruft instance.setSpeed()
+  // auf, rührt also weder Markup-Struktur noch verschachtelte Kind-Boxen an.
+  // Werte werden erst beim Klick auf "Übernehmen" angewendet (nicht live pro
+  // Tastenanschlag), damit z.B. Zwischenwerte beim Tippen nicht kurz einen
+  // ungültigen Zustand rendern.
+  const controlInput = ({ value, min, max, step = 1 }) => {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = String(min);
+    input.max = String(max);
+    input.step = String(step);
+    input.value = String(value);
+    return input;
   };
 
-  const destroyMarqueeInstance = () => {
-    marqueeInstance?.destroy();
-    marqueeInstance = null;
-  };
-
-  const buildSlider = (startIndex = 0) => {
-    widgetInstances.slider = createSlider('#demo-slider [data-slider]', {
-      loop: true,
-      autoHeight: true,
-      heightSelector: '.demo-inner',
-      startIndex,
+  const selectControl = ({ value, options }) => {
+    const select = document.createElement('select');
+    options.forEach(({ value: v, label }) => {
+      const opt = document.createElement('option');
+      opt.value = v;
+      opt.textContent = label;
+      opt.selected = v === value;
+      select.appendChild(opt);
     });
+    return select;
   };
 
-  // Retroaktiv: Marquee wird zu-/abgeschaltet, während der Slider schon
-  // läuft — hier bleibt nur der einmalige Rebuild, da slider.js keine
-  // Möglichkeit bietet, nachträglich eine Slide anzumelden.
-  const attachMarqueeIndicator = () => {
-    if (marqueeSlideEl || !document.getElementById('demo-slider')) return;
-    const wrap = document.createElement('div');
-    wrap.innerHTML = marqueeSlideMarkup();
-    marqueeSlideEl = wrap.firstElementChild;
-    document.querySelector('#demo-slider [data-slider-track]').appendChild(marqueeSlideEl);
-    mountMarqueeInstance();
-    const startIndex = widgetInstances.slider?.current ?? 0;
-    widgetInstances.slider?.destroy();
-    buildSlider(startIndex);
+  const renderControlsBar = (hostEl, entries) => {
+    if (!hostEl) return;
+    hostEl.innerHTML = '';
+    const form = document.createElement('form');
+    form.className = 'tool-controls__form';
+    entries.forEach(({ label, input }) => {
+      const wrap = document.createElement('label');
+      wrap.className = 'tool-controls__item';
+      const span = document.createElement('span');
+      span.textContent = label;
+      wrap.append(span, input);
+      form.appendChild(wrap);
+    });
+    const submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.className = 'tool-controls__submit';
+    submit.textContent = 'Übernehmen';
+    form.appendChild(submit);
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!form.reportValidity()) return;
+      entries.forEach(({ input, onChange, isNumber = true, optional = false }) => {
+        if (optional && input.value === '') return; // leer = CSS-Standard unangetastet lassen
+        onChange(isNumber ? Number(input.value) : input.value);
+      });
+    });
+    hostEl.appendChild(form);
   };
 
-  const detachMarqueeIndicator = () => {
-    if (!marqueeSlideEl) return;
-    destroyMarqueeInstance();
-    marqueeSlideEl.remove();
-    marqueeSlideEl = null;
-    if (!document.getElementById('demo-slider')) return;
-    const startIndex = widgetInstances.slider?.current ?? 0;
-    widgetInstances.slider?.destroy();
-    buildSlider(startIndex);
+  const sliderControls = (rootEl, instance) => ([
+    {
+      label: 'Wiedergabe',
+      isNumber: false,
+      input: selectControl({
+        value: 'single',
+        options: [
+          { value: 'single', label: 'Einzelbild' },
+          { value: 'multi', label: 'Mehrere gleich groß' },
+          { value: 'featured', label: 'Großbild + Peek' },
+        ],
+      }),
+      onChange: (v) => instance.setMode(v),
+    },
+    {
+      label: 'Sichtbare Bilder (leer = automatisch)',
+      input: controlInput({ value: '', min: 1, max: 4, step: 1 }),
+      optional: true,
+      onChange: (v) => instance.setVisibleSlides(v),
+    },
+    {
+      label: 'Großbild-Breite (%)',
+      input: controlInput({ value: 50, min: 20, max: 80, step: 5 }),
+      onChange: (v) => { rootEl.style.setProperty('--slider-featured-width', `${v}%`); instance.refresh(); },
+    },
+    {
+      label: 'Tempo (ms)',
+      input: controlInput({ value: 500, min: 100, max: 2000, step: 50 }),
+      onChange: (v) => rootEl.style.setProperty('--slider-transition', `transform ${v}ms cubic-bezier(.4, 0, .2, 1)`),
+    },
+  ]);
+
+  const marqueeControls = (rootEl, instance) => ([
+    {
+      label: 'Sichtbare Bilder (leer = automatisch)',
+      input: controlInput({ value: '', min: 1, max: 4, step: 1 }),
+      optional: true,
+      onChange: (v) => { rootEl.style.setProperty('--marquee-visible-items', v); instance.rebuild(); },
+    },
+    {
+      label: 'Tempo (px/s)',
+      input: controlInput({ value: 60, min: 10, max: 300, step: 10 }),
+      onChange: (v) => instance.setSpeed(v),
+    },
+  ]);
+
+  const TOOLS = {};
+
+  TOOLS.slider = {
+    name: 'Slider',
+    desc: '"Peek"-Slider mit Pfeilen, Dots, Swipe.',
+    activate(api) {
+      api.addSection(`
+        <div class="tool-section" data-tool-id="slider">
+          <div class="head">Slider <span class="desc">"Peek"-Slider/Carousel</span><button type="button" class="close" data-close aria-label="Slider deaktivieren">×</button></div>
+          ${rawSliderMarkup()}
+          <div class="tool-controls" data-tool-controls></div>
+          <div data-tool-branch></div>
+        </div>
+      `);
+      const sectionEl = api.stage.lastElementChild;
+      fillImages(sectionEl);
+
+      const sliderInstance = createSlider(sectionEl.querySelector('[data-slider]'), {
+        loop: true, autoHeight: true, heightSelector: '.demo-inner',
+      });
+      renderControlsBar(sectionEl.querySelector('[data-tool-controls]'), sliderControls(sectionEl.querySelector('[data-slider]'), sliderInstance));
+
+      const childTools = {
+        ...TOOLS,
+        marquee: makeCollectionChildTool('marquee', sliderInstance, 'slider'),
+        slider: makeCollectionChildTool('slider', sliderInstance, 'slider'),
+      };
+      const childBox = api.createChildBox(sectionEl.querySelector('[data-tool-branch]'), childTools);
+
+      sectionEl.__destroy = () => { childBox.destroyAll(); sliderInstance?.destroy(); };
+    },
+    deactivate(api) {
+      const sectionEl = api.stage.querySelector(':scope > [data-tool-id="slider"]');
+      sectionEl?.__destroy?.();
+      sectionEl?.remove();
+    },
   };
 
-  const TOOLS = {
-    slider: {
-      name: 'Slider',
-      desc: '"Peek"-Slider mit Pfeilen, Dots, Swipe.',
-      activate(rootApi) {
-        rootApi.addSection(`
-          <div class="tool-section" id="demo-slider" data-tool-id="slider">
-            <div class="head">Slider <span class="desc">"Peek"-Slider/Carousel</span><button type="button" class="close" data-close aria-label="Slider deaktivieren">×</button></div>
-            <div class="tw-slider" data-slider data-lightbox>
-              <div class="tw-slider__track" data-slider-track>
-                <div class="tw-slider__slide" data-slider-slide>
-                  <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 1">
-                    <img class="demo-slide__img" alt="">
-                    <h2>Slide 1</h2>
-                    <p>Beispieltext, um Layout und Übergänge zu prüfen.</p>
-                  </div>
-                </div>
-                <div class="tw-slider__slide" data-slider-slide>
-                  <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 2">
-                    <img class="demo-slide__img" alt="">
-                    <h2>Slide 2</h2>
-                    <p>Einheitliches Seitenverhältnis, Nav bleibt auf gleicher Höhe.</p>
-                  </div>
-                </div>
-                <div class="tw-slider__slide" data-slider-slide>
-                  <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 3">
-                    <img class="demo-slide__img" alt="">
-                    <h2>Slide 3</h2>
-                    <p>Kurzer Inhalt.</p>
-                  </div>
-                </div>
-                <div class="tw-slider__slide" data-slider-slide>
-                  <div class="demo-inner demo-slide" data-lightbox-item data-lightbox-caption="Slide 4">
-                    <img class="demo-slide__img" alt="">
-                    <h2>Slide 4</h2>
-                    <p>Per Wischgeste, Pfeiltasten oder Pfeil-Buttons navigierbar.</p>
-                  </div>
-                </div>
-              </div>
-              <div class="tw-slider__nav">
-                <button class="tw-slider__arrow" data-slider-prev aria-label="Zurück">‹</button>
-                <div class="tw-slider__dots" data-slider-dots></div>
-                <button class="tw-slider__arrow" data-slider-next aria-label="Weiter">›</button>
-              </div>
-            </div>
+  TOOLS.marquee = {
+    name: 'Marquee',
+    desc: 'Endlos-Laufband mit Auto-Duplikation.',
+    activate(api) {
+      api.addSection(`
+        <div class="tool-section" data-tool-id="marquee">
+          <div class="head">Marquee <span class="desc">Endlos-Laufband</span><button type="button" class="close" data-close aria-label="Marquee deaktivieren">×</button></div>
+          ${rawMarqueeMarkup()}
+          <div class="tool-controls" data-tool-controls></div>
+          <div data-tool-branch></div>
+        </div>
+      `);
+      const sectionEl = api.stage.lastElementChild;
+      fillImages(sectionEl);
+
+      const marqueeInstance = createMarquee(sectionEl.querySelector('[data-marquee]'), { speed: 60, pauseOnHover: true });
+      renderControlsBar(sectionEl.querySelector('[data-tool-controls]'), marqueeControls(sectionEl.querySelector('[data-marquee]'), marqueeInstance));
+
+      const childTools = {
+        ...TOOLS,
+        marquee: makeCollectionChildTool('marquee', marqueeInstance, 'marquee'),
+        slider: makeCollectionChildTool('slider', marqueeInstance, 'marquee'),
+      };
+      const childBox = api.createChildBox(sectionEl.querySelector('[data-tool-branch]'), childTools);
+
+      sectionEl.__destroy = () => { childBox.destroyAll(); marqueeInstance?.destroy(); };
+    },
+    deactivate(api) {
+      const sectionEl = api.stage.querySelector(':scope > [data-tool-id="marquee"]');
+      sectionEl?.__destroy?.();
+      sectionEl?.remove();
+    },
+  };
+
+  // Generische Sonderkopplung: childType wird nicht als eigene Section
+  // gerendert, sondern über addSlide()/addItem() (slider.js/marquee.js) als
+  // natives Element in die Sammlung des Host-Tools eingehängt — kein
+  // destroy()/create...()-Zyklus nötig, die Tools selbst führen das Array,
+  // das "abgespielt" wird. Die Steuerung (Name/Close/weitere Äste) läuft
+  // trotzdem über eine normale BlueprintBox-Section, weil [data-close] nur
+  // innerhalb der eigenen Stage funktioniert — das eingehängte Element im
+  // fremden Track kann daher nicht selbst der Tool-Root sein.
+  function makeCollectionChildTool(childType, hostInstance, hostKind) {
+    const label = childType === 'slider' ? 'Slider' : 'Marquee';
+    const rawMarkup = childType === 'slider' ? rawSliderMarkup : rawMarqueeMarkup;
+
+    return {
+      name: label,
+      desc: `Läuft als eigenes Element direkt im ${hostKind === 'slider' ? 'Slider' : 'Marquee'} oben.`,
+      activate(api) {
+        const isSliderHost = hostKind === 'slider';
+        const wrapperHtml = isSliderHost
+          ? `<div class="tw-slider__slide"><div class="demo-inner${childType === 'marquee' ? ' demo-slide slider-inline-marquee' : ''}">${rawMarkup()}</div></div>`
+          : `<div class="marquee-inline-host">${rawMarkup()}</div>`;
+
+        const mountedEl = isSliderHost ? hostInstance.addSlide(wrapperHtml) : hostInstance.addItem(wrapperHtml);
+        fillImages(mountedEl);
+
+        const innerRoot = mountedEl.querySelector(childType === 'slider' ? '[data-slider]' : '[data-marquee]');
+        const childInstance = childType === 'slider'
+          ? createSlider(innerRoot, { loop: true, autoHeight: true, heightSelector: '.demo-inner' })
+          : createMarquee(innerRoot, { speed: 60, pauseOnHover: true });
+
+        api.addSection(`
+          <div class="tool-section" data-tool-id="${childType}">
+            <div class="head">${label} <span class="desc">läuft als eigenes Element oben</span><button type="button" class="close" data-close aria-label="${label} deaktivieren">×</button></div>
+            <div class="tool-controls" data-tool-controls></div>
+            <div data-tool-branch></div>
           </div>
         `);
-        fillImages('demo-slider');
+        const controlEl = api.stage.lastElementChild;
+        renderControlsBar(
+          controlEl.querySelector('[data-tool-controls]'),
+          childType === 'slider' ? sliderControls(innerRoot, childInstance) : marqueeControls(innerRoot, childInstance),
+        );
+        const grandChildTools = {
+          ...TOOLS,
+          ...(childType === 'slider' ? {
+            marquee: makeCollectionChildTool('marquee', childInstance, 'slider'),
+            slider: makeCollectionChildTool('slider', childInstance, 'slider'),
+          } : {
+            marquee: makeCollectionChildTool('marquee', childInstance, 'marquee'),
+            slider: makeCollectionChildTool('slider', childInstance, 'marquee'),
+          }),
+        };
+        const childBox = api.createChildBox(controlEl.querySelector('[data-tool-branch]'), grandChildTools);
 
-        // Sobald aktiviert: sofort entscheiden (Input kommt synchron aus
-        // rootApi.isActive('marquee')), ob die Marquee-Slide von Anfang an
-        // Teil des Tracks ist — dafür braucht es keinen Rebuild, das ist
-        // direkt Teil des createSlider()-Aufrufs unten.
-        if (rootApi.isActive('marquee')) {
-          const wrap = document.createElement('div');
-          wrap.innerHTML = marqueeSlideMarkup();
-          marqueeSlideEl = wrap.firstElementChild;
-          document.querySelector('#demo-slider [data-slider-track]').appendChild(marqueeSlideEl);
-          mountMarqueeInstance();
-        }
-        buildSlider();
-        attachLightbox('demo-slider');
+        controlEl.__destroy = () => {
+          childBox.destroyAll();
+          childInstance?.destroy();
+          isSliderHost ? hostInstance.removeSlide(mountedEl) : hostInstance.removeItem(mountedEl);
+        };
       },
-      deactivate() {
-        destroyMarqueeInstance();
-        marqueeSlideEl = null;
-        detachLightbox('demo-slider');
-        widgetInstances.slider?.destroy();
-        widgetInstances.slider = null;
-        document.getElementById('demo-slider')?.remove();
+      deactivate(api) {
+        const controlEl = api.stage.querySelector(`:scope > [data-tool-id="${childType}"]`);
+        controlEl?.__destroy?.();
+        controlEl?.remove();
       },
-    },
-    marquee: {
-      name: 'Marquee',
-      desc: 'Endlos-Laufband mit Auto-Duplikation.',
-      activate(rootApi) {
-        rootApi.addSection(`
-          <div class="tool-section" id="demo-marquee" data-tool-id="marquee">
-            <div class="head">Marquee <span class="desc">Endlos-Laufband mit Auto-Duplikation</span><button type="button" class="close" data-close aria-label="Marquee deaktivieren">×</button></div>
-            <div class="tw-marquee" data-marquee data-lightbox>
-              <div class="tw-marquee__track" data-marquee-track>
-                <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-                <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-                <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-                <span class="demo-chip" data-marquee-item data-lightbox-item><img class="demo-chip__img" alt=""><span class="demo-chip__label"></span></span>
-              </div>
-            </div>
-          </div>
-        `);
-        fillImages('demo-marquee');
-        widgetInstances.marquee = createMarquee('#demo-marquee [data-marquee]', { speed: 60, pauseOnHover: true });
-        attachLightbox('demo-marquee');
-        // Rückwirkend koppeln, falls Slider schon läuft.
-        if (rootApi.isActive('slider')) attachMarqueeIndicator();
-      },
-      deactivate() {
-        detachMarqueeIndicator();
-        detachLightbox('demo-marquee');
-        widgetInstances.marquee?.destroy();
-        widgetInstances.marquee = null;
-        document.getElementById('demo-marquee')?.remove();
-      },
-    },
+    };
+  }
+
+  // LightboxPopup gilt projektweit für alle Bilder gleichzeitig — daher kein
+  // Eintrag in TOOLS (das per ...TOOLS in jeden Ast/jedes Blatt gespreadet
+  // wird), sondern ein eigener, nur am Stamm gemergter Tool-Eintrag. Aktiviert
+  // koppelt sich EINE createLightbox()-Instanz per Event-Delegation an
+  // #blueprint-root und erfasst dadurch automatisch alle aktuellen und
+  // künftig hinzukommenden Bilder, egal auf welcher Verschachtelungstiefe.
+  let lightboxInstance = null;
+  const syncGlobalLightbox = (api) => {
+    if (!api.isActive('lightbox')) {
+      lightboxInstance?.destroy();
+      lightboxInstance = null;
+      return;
+    }
+    if (lightboxInstance) return; // schon aktiv, lauscht per Delegation auch auf künftige Bilder
+    lightboxInstance = createLightbox('#blueprint-root');
+  };
+
+  const rootOnlyTools = {
     lightbox: {
       name: 'LightboxPopup',
-      desc: 'Bild-Grid mit Großansicht, koppelt sich an aktive Sections.',
-      activate(rootApi) {
-        rootApi.addSection(`
-          <div class="tool-section" id="demo-lightbox" data-tool-id="lightbox">
-            <div class="head">LightboxPopup <span class="desc">Bild-Grid mit Großansicht</span><button type="button" class="close" data-close aria-label="LightboxPopup deaktivieren">×</button></div>
-            <div class="demo-grid" data-lightbox>
-              <div class="demo-grid__item" data-lightbox-item data-lightbox-caption="Beschädigte Dosen"><img alt=""></div>
-              <div class="demo-grid__item" data-lightbox-item><img alt=""></div>
-              <div class="demo-grid__item" data-lightbox-item data-lightbox-caption="Cold Steel Schwert"><img alt=""></div>
-              <div class="demo-grid__item" data-lightbox-item><img alt=""></div>
-            </div>
+      desc: 'Macht alle Bilder im gesamten Baum klickbar (Großansicht) — projektweit, nur einmal zuschaltbar.',
+      activate(api) {
+        api.addSection(`
+          <div class="tool-section" data-tool-id="lightbox">
+            <div class="head">LightboxPopup <span class="desc">macht alle Bilder im Baum klickbar</span><button type="button" class="close" data-close aria-label="LightboxPopup deaktivieren">×</button></div>
           </div>
         `);
-        fillImages('demo-lightbox');
-        widgetInstances.lightbox = createLightbox('#demo-lightbox [data-lightbox]');
-        lightboxActive = true;
-        // Rückwirkend an bereits aktive Slider-/Marquee-Sections koppeln.
-        attachLightbox('demo-slider');
-        attachLightbox('demo-marquee');
+        syncGlobalLightbox(api);
       },
-      deactivate() {
-        lightboxActive = false;
-        // Entkoppelt sich wieder von Slider/Marquee, die bleiben aktiv.
-        detachLightbox('demo-slider');
-        detachLightbox('demo-marquee');
-        widgetInstances.lightbox?.destroy();
-        widgetInstances.lightbox = null;
-        document.getElementById('demo-lightbox')?.remove();
+      deactivate(api) {
+        api.stage.querySelector(':scope > [data-tool-id="lightbox"]')?.remove();
+        syncGlobalLightbox(api);
       },
     },
   };
 
-  createBlueprintBox('#blueprint-root', TOOLS);
+  const blueprintApi = createBlueprintBox('#blueprint-root', { ...TOOLS, ...rootOnlyTools });
+  blueprintApi.onChange(() => syncGlobalLightbox(blueprintApi));
 </script>
 </body>
 </html>

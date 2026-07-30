@@ -1,23 +1,3 @@
-// Blueprint Box — generische Zu-/Abschalt-Steuerung für ein Set von "Tools".
-//
-// Ein Tool ist ein beliebiges Objekt { name, desc, activate(api), deactivate(api) }.
-// createBlueprintBox rendert selbst eine minimale Picker-UI (Karten-Grid,
-// Auswahlfeld, Fertig-Hinweis, Stage) in den übergebenen Container und reicht
-// jedem Tool eine API durch, über die sich Tools GEGENSEITIG steuern —
-// die Blueprint Box selbst implementiert keine Kopplungslogik zwischen Tools,
-// sie liefert dafür nur Lesezugriff (isActive/getActive), einen kleinen
-// Variablenspeicher (getVar/setVar) und onChange.
-//
-// Baumstruktur: api.createChildBox(mountEl, childTools) ruft dieselbe
-// Funktion rekursiv auf — ein Tool kann so in seiner eigenen Section eine
-// eigene Blueprint Box für seine Sub-Tools aufspannen (dieselbe Funktion
-// steuert die nächste Ebene).
-//
-// Markup-Vertrag für Tools, die eigenen Inhalt über api.addSection(html)
-// in die Stage rendern: Das Wurzel-Element der Section trägt
-// data-tool-id="<key>"; ein optionales Element darin mit [data-close]
-// deaktiviert das Tool per Klick.
-
 export function createBlueprintBox(mountEl, tools, options = {}) {
   const { showTree = true, treeLabel = 'Stamm' } = options;
   const el = typeof mountEl === 'string' ? document.querySelector(mountEl) : mountEl;
@@ -26,16 +6,11 @@ export function createBlueprintBox(mountEl, tools, options = {}) {
   el.innerHTML = `
     <div data-blueprint-grid></div>
     ${showTree ? '<div data-blueprint-tree></div>' : ''}
-    <div data-blueprint-select hidden>
-      <label>Weiteres Tool aktivieren: <select data-blueprint-add></select></label>
-    </div>
     <div data-blueprint-done hidden>Alle Tools sind aktiv.</div>
     <div data-blueprint-stage></div>
   `;
   const grid = el.querySelector('[data-blueprint-grid]');
   const tree = showTree ? el.querySelector('[data-blueprint-tree]') : null;
-  const selectWrap = el.querySelector('[data-blueprint-select]');
-  const select = el.querySelector('[data-blueprint-add]');
   const done = el.querySelector('[data-blueprint-done]');
   const stage = el.querySelector('[data-blueprint-stage]');
 
@@ -44,31 +19,54 @@ export function createBlueprintBox(mountEl, tools, options = {}) {
   const listeners = new Set();
   const notify = () => listeners.forEach((fn) => fn());
 
-  // Baumstruktur-Tracking: welcher Tool-Key hat über createChildBox welche
-  // Kind-Box(en) aufgespannt — nur dafür da, um das Diagramm zu zeichnen.
   const childBoxes = {};
   let currentActivatingKey = null;
 
-  const describeTree = () => Object.entries(tools).map(([key, tool]) => ({
-    name: tool.name,
-    active: active.has(key),
-    children: (childBoxes[key] || []).flatMap((childBox) => childBox.describeTree()),
-  }));
+  // Nur aktive Tools landen im Baum — jeder Knoten trägt seine eigene
+  // deactivate()-Closure (gebunden an die Box+Key-Kombination, die ihn
+  // erzeugt hat), damit der Lösch-Button im Baum unabhängig von der
+  // Verschachtelungstiefe die richtige Instanz trifft.
+  const describeTree = () => Object.entries(tools)
+    .filter(([key]) => active.has(key))
+    .map(([key, tool]) => ({
+      name: tool.name,
+      deactivate: () => deactivate(key),
+      children: (childBoxes[key] || []).flatMap((childBox) => childBox.describeTree()),
+    }));
 
-  const renderTreeList = (nodes) => `
-    <ul>
-      ${nodes.map((n) => `
-        <li>
-          <span data-tree-node class="${n.active ? 'is-active' : ''}">${n.name}</span>
-          ${n.children.length ? renderTreeList(n.children) : ''}
-        </li>
-      `).join('')}
-    </ul>
-  `;
+  const buildTreeList = (nodes) => {
+    const ul = document.createElement('ul');
+    nodes.forEach((n) => {
+      const li = document.createElement('li');
+
+      const span = document.createElement('span');
+      span.setAttribute('data-tree-node', '');
+      span.className = 'is-active';
+      span.textContent = n.name;
+      li.appendChild(span);
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.setAttribute('data-tree-delete', '');
+      delBtn.setAttribute('aria-label', `${n.name} entfernen`);
+      delBtn.textContent = '×';
+      delBtn.addEventListener('click', () => n.deactivate());
+      li.appendChild(delBtn);
+
+      if (n.children.length) li.appendChild(buildTreeList(n.children));
+      ul.appendChild(li);
+    });
+    return ul;
+  };
 
   const renderTree = () => {
     if (!tree) return;
-    tree.innerHTML = `<div data-blueprint-tree-root>${treeLabel}</div>${renderTreeList(describeTree())}`;
+    tree.innerHTML = '';
+    const rootLabel = document.createElement('div');
+    rootLabel.setAttribute('data-blueprint-tree-root', '');
+    rootLabel.textContent = treeLabel;
+    tree.appendChild(rootLabel);
+    tree.appendChild(buildTreeList(describeTree()));
   };
 
   const api = {
@@ -96,43 +94,31 @@ export function createBlueprintBox(mountEl, tools, options = {}) {
 
   const renderCards = () => {
     grid.innerHTML = '';
-    Object.entries(tools).forEach(([key, tool]) => {
-      const card = document.createElement('div');
-      card.setAttribute('data-blueprint-card', '');
-      card.innerHTML = `
-        <div data-blueprint-card-name>${tool.name}</div>
-        <div data-blueprint-card-desc>${tool.desc}</div>
-        <button type="button" data-blueprint-card-activate>Aktivieren</button>
-      `;
-      card.querySelector('[data-blueprint-card-activate]').addEventListener('click', () => activate(key));
-      grid.appendChild(card);
-    });
-  };
-
-  const renderSelect = () => {
-    const remaining = Object.keys(tools).filter((k) => !active.has(k));
-    select.innerHTML = '<option value="" disabled selected>Tool wählen …</option>'
-      + remaining.map((k) => `<option value="${k}">${tools[k].name} — ${tools[k].desc}</option>`).join('');
+    Object.entries(tools)
+      .filter(([key]) => !active.has(key))
+      .forEach(([key, tool]) => {
+        const card = document.createElement('div');
+        card.setAttribute('data-blueprint-card', '');
+        card.innerHTML = `
+          <div data-blueprint-card-name>${tool.name}</div>
+          <div data-blueprint-card-desc>${tool.desc}</div>
+          <button type="button" data-blueprint-card-activate>Aktivieren</button>
+        `;
+        card.querySelector('[data-blueprint-card-activate]').addEventListener('click', () => activate(key));
+        grid.appendChild(card);
+      });
   };
 
   const render = () => {
-    if (active.size === 0) {
-      grid.hidden = false;
-      selectWrap.hidden = true;
-      done.hidden = true;
-      renderCards();
-      return;
-    }
-    grid.hidden = true;
     const remaining = Object.keys(tools).filter((k) => !active.has(k));
     if (remaining.length === 0) {
-      selectWrap.hidden = true;
+      grid.hidden = true;
       done.hidden = false;
-    } else {
-      selectWrap.hidden = false;
-      done.hidden = true;
-      renderSelect();
+      return;
     }
+    grid.hidden = false;
+    done.hidden = true;
+    renderCards();
   };
 
   function activate(key) {
@@ -156,12 +142,6 @@ export function createBlueprintBox(mountEl, tools, options = {}) {
     notify();
   }
 
-  select.addEventListener('change', () => {
-    const key = select.value;
-    if (key) activate(key);
-  });
-
-  // Deaktivieren über [data-close] im Tool-Markup, delegiert auf die Stage.
   stage.addEventListener('click', (e) => {
     const closeBtn = e.target.closest('[data-close]');
     if (!closeBtn) return;

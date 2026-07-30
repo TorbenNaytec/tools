@@ -41,17 +41,30 @@ createMarquee('[data-marquee]', {
   gap: null,          // überschreibt --marquee-gap
   pauseOnHover: true,
   reverse: false,
+  items: null,         // optional: Array von HTML-Strings/Elementen statt vorgefertigtem Markup im Track
 });
 ```
+
+`items` (Option) ersetzt vorhandenes Markup im Track (nicht additiv) — pro
+Instanz entweder Markup im HTML vorgeben ODER das Array übergeben, nicht
+beides.
 
 `createMarquee()` gibt `null` zurück, falls Track/Items fehlen, sonst:
 
 ```js
-{ items, rebuild(), destroy() }
+{
+  items, rebuild(), destroy(),
+  setSpeed(px), // Geschwindigkeit (px/s) live ändern, baut die Klone neu auf
+  addItem(content), // content: HTML-String oder Element; hängt ans Ende an
+  removeItem(itemEl),
+}
 ```
 
-`items` sind die Original-Elemente (ohne die automatisch erzeugten Klone) —
-praktisch, um z.B. Klick-Handler nur einmal pro Motiv zu binden.
+`items` ist ein Snapshot der aktuellen Original-Elemente (ohne die
+automatisch erzeugten Klone) — praktisch, um z.B. Klick-Handler nur einmal
+pro Motiv zu binden. `addItem`/`removeItem` mutieren die interne Quelle der
+Wahrheit direkt und bauen den Klon-Zyklus neu auf (kein `destroy()`+
+`createMarquee()` nötig, um nachträglich ein Item aufzunehmen).
 
 `initMarquees(selector?, options?)` initialisiert alle passenden Marquees im
 Dokument auf einmal.
@@ -70,6 +83,7 @@ Testreglern für Geschwindigkeit, Richtung und Pause-bei-Hover.
 |---|---|
 | `--marquee-gap` | Abstand zwischen Items — standardmäßig responsiv (`clamp(16px, 4vw, 32px)`) |
 | `--marquee-fade` | Breite der Ausblend-Zone an den Rändern (Soft-Edge per Mask) |
+| `--marquee-visible-items` | Anzahl gleichzeitig sichtbarer Items (Standard responsiv: `1` unter 600px, `3` ab 600px, `4` ab 1200px) — setzt die Item-Breite über `[data-marquee-item]`, eigene feste Item-Breiten im Markup überschreiben das wieder |
 | `--marquee-duration` | Wird von `marquee.js` automatisch gesetzt — nicht manuell überschreiben |
 
 `marquee.js` injiziert das CSS oben beim ersten Aufruf automatisch als

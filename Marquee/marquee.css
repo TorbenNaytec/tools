@@ -1,16 +1,22 @@
-/* Generisches Marquee-Skeleton — reines CSS, kein Build-Schritt nötig.
-   Die Animationsdauer wird von marquee.js aus der Inhaltsbreite berechnet
-   und als --marquee-duration gesetzt; hier nur Basiswerte/Fallback. */
-
 .tw-marquee {
   --marquee-gap: clamp(16px, 4vw, 32px);
   --marquee-duration: 30s;
   --marquee-fade: 48px;
+  --marquee-visible-items: 1;
 
+  container-type: inline-size;
   position: relative;
+  height: 100%;
   overflow: hidden;
   mask-image: linear-gradient(to right, transparent, #000 var(--marquee-fade), #000 calc(100% - var(--marquee-fade)), transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--marquee-fade), #000 calc(100% - var(--marquee-fade)), transparent);
+}
+
+@media (min-width: 600px) {
+  .tw-marquee { --marquee-visible-items: 3; }
+}
+@media (min-width: 1200px) {
+  .tw-marquee { --marquee-visible-items: 4; }
 }
 
 .tw-marquee__track {
@@ -18,7 +24,13 @@
   align-items: center;
   gap: var(--marquee-gap);
   width: max-content;
+  height: 100%;
   animation: tw-marquee var(--marquee-duration) linear infinite;
+}
+
+[data-marquee-item] {
+  width: calc((100cqw - (var(--marquee-visible-items) - 1) * var(--marquee-gap)) / var(--marquee-visible-items));
+  flex-shrink: 0;
 }
 
 .tw-marquee.is-paused .tw-marquee__track {

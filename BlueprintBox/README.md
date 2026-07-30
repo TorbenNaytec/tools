@@ -5,9 +5,9 @@ JavaScript (ES-Modul, keine Abhängigkeiten) + reines CSS, kein Build-Schritt
 nötig.
 
 Ein Tool ist ein beliebiges Objekt `{ name, desc, activate(api), deactivate(api) }`.
-`createBlueprintBox` rendert selbst eine Picker-UI (Karten-Grid zum Start,
-danach Auswahlfeld für weitere Tools, Fertig-Hinweis, sowie eine Stage für
-den von den Tools gerenderten Inhalt) in den übergebenen Container.
+`createBlueprintBox` rendert selbst eine Picker-UI (Karten-Grid für alle noch
+nicht aktiven Tools, Fertig-Hinweis sobald alle aktiv sind, sowie eine Stage
+für den von den Tools gerenderten Inhalt) in den übergebenen Container.
 
 Die Blueprint Box implementiert selbst **keine Kopplungslogik zwischen
 Tools** — sie liefert dafür nur:
@@ -46,7 +46,7 @@ einer Kind-Box auf einmal.
   const TOOLS = {
     beispiel: {
       name: 'Beispiel',
-      desc: 'Kurze Beschreibung für Karte/Auswahlfeld.',
+      desc: 'Kurze Beschreibung für die Karte.',
       activate(api) {
         api.addSection(`
           <div data-tool-id="beispiel">
@@ -111,4 +111,3 @@ CSS-Variablen bzw. eigenes CSS ersetzbar:
 | `--blueprint-accent` | Farbe des Aktivieren-Buttons |
 | `--blueprint-border` | Rahmenfarbe von Karten/Fertig-Hinweis |
 | `--blueprint-muted` | Farbe für Beschreibungstexte |
-| `--blueprint-select-bg` / `--blueprint-select-border` | Hintergrund/Rahmen des Auswahlfelds |

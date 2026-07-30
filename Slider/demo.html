@@ -5,6 +5,7 @@
 <title>Slider — Demo</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="slider.css">
+<link rel="stylesheet" href="../LightboxPopup/lightboxpopup.css">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -115,10 +116,10 @@
     <button id="reinit" title="Zerstört die aktuelle Slider-Instanz und erstellt sie mit den oben gewählten Optionen neu.">Neu initialisieren</button>
   </div>
 
-  <div class="tw-slider" data-slider>
+  <div class="tw-slider" data-slider data-lightbox>
     <div class="tw-slider__track" data-slider-track>
 
-      <div class="tw-slider__slide" data-slider-slide>
+      <div class="tw-slider__slide" data-slider-slide data-lightbox-item data-lightbox-caption="Slide 1">
         <div class="demo-inner demo-slide">
           <img class="demo-slide__img" alt="">
           <h2>Slide 1</h2>
@@ -126,7 +127,7 @@
         </div>
       </div>
 
-      <div class="tw-slider__slide" data-slider-slide>
+      <div class="tw-slider__slide" data-slider-slide data-lightbox-item data-lightbox-caption="Slide 2">
         <div class="demo-inner demo-slide">
           <img class="demo-slide__img" alt="">
           <h2>Slide 2</h2>
@@ -135,7 +136,7 @@
         </div>
       </div>
 
-      <div class="tw-slider__slide" data-slider-slide>
+      <div class="tw-slider__slide" data-slider-slide data-lightbox-item data-lightbox-caption="Slide 3">
         <div class="demo-inner demo-slide">
           <img class="demo-slide__img" alt="">
           <h2>Slide 3</h2>
@@ -143,7 +144,7 @@
         </div>
       </div>
 
-      <div class="tw-slider__slide" data-slider-slide>
+      <div class="tw-slider__slide" data-slider-slide data-lightbox-item data-lightbox-caption="Slide 4">
         <div class="demo-inner demo-slide">
           <img class="demo-slide__img" alt="">
           <h2>Slide 4</h2>
@@ -168,6 +169,7 @@
 </script>
 <script type="module">
   import { createSlider } from './slider.js';
+  import { createLightbox } from '../LightboxPopup/lightboxpopup.js';
 
   // Bildquelle konfigurierbar:
   //  - String  → Ordnerpfad, wird mit IMAGE_FILES zu vollständigen Pfaden kombiniert
@@ -187,6 +189,8 @@
     const srcs = resolveImageSrcs(IMAGE_SOURCE, IMAGE_FILES);
     img.src = srcs[i % srcs.length];
   });
+
+  createLightbox('[data-lightbox]');
 
   let instance = null;
 

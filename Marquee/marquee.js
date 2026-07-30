@@ -1,18 +1,3 @@
-// Wiederverwendbares Endlos-Laufband (Marquee) — projektunabhängig.
-//
-// Anders als eine reine CSS-Lösung übernimmt dieses Script das Vervielfachen
-// des Inhalts (Original nur 1× im Markup nötig) und berechnet die Animations-
-// dauer aus der tatsächlichen Inhaltsbreite, sodass die Geschwindigkeit
-// unabhängig von der Anzahl der Items konstant bleibt.
-//
-// Markup-Vertrag:
-//   <div data-marquee>
-//     <div data-marquee-track>
-//       <span data-marquee-item>…</span>
-//       <span data-marquee-item>…</span>
-//     </div>
-//   </div>
-
 const SEL = {
   track: '[data-marquee-track]',
   item:  '[data-marquee-item]',
@@ -20,18 +5,25 @@ const SEL = {
 
 const STYLE_ID = 'tw-marquee-styles';
 
-// Identisch zu marquee.css — hier eingebettet, damit der Marquee ohne
-// zusätzlichen <link> lauffähig ist. Wird einmalig pro Dokument injiziert.
 const CSS = `
 .tw-marquee {
   --marquee-gap: clamp(16px, 4vw, 32px);
   --marquee-duration: 30s;
   --marquee-fade: 48px;
+  --marquee-visible-items: 1;
 
+  container-type: inline-size;
   position: relative;
   overflow: hidden;
   mask-image: linear-gradient(to right, transparent, #000 var(--marquee-fade), #000 calc(100% - var(--marquee-fade)), transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--marquee-fade), #000 calc(100% - var(--marquee-fade)), transparent);
+}
+
+@media (min-width: 600px) {
+  .tw-marquee { --marquee-visible-items: 3; }
+}
+@media (min-width: 1200px) {
+  .tw-marquee { --marquee-visible-items: 4; }
 }
 
 .tw-marquee__track {
@@ -40,6 +32,11 @@ const CSS = `
   gap: var(--marquee-gap);
   width: max-content;
   animation: tw-marquee var(--marquee-duration) linear infinite;
+}
+
+[data-marquee-item] {
+  width: calc((100cqw - (var(--marquee-visible-items) - 1) * var(--marquee-gap)) / var(--marquee-visible-items));
+  flex-shrink: 0;
 }
 
 .tw-marquee.is-paused .tw-marquee__track {
@@ -73,15 +70,40 @@ export function createMarquee(root, options = {}) {
   const track = el.querySelector(SEL.track);
   if (!track) return null;
 
-  const originals = [...track.querySelectorAll(SEL.item)];
-  if (!originals.length) return null;
-
-  const {
-    speed = 60,          // px pro Sekunde
-    gap = null,          // überschreibt --marquee-gap, sonst per CSS gesetzt
+  let {
+    speed = 60,
+    gap = null,
     pauseOnHover = true,
     reverse = false,
+    items: itemsInput = null, // optional: Array von HTML-Strings/Elementen statt vorgefertigtem Markup
   } = options;
+
+  const toElement = (content) => {
+    if (content instanceof Element) return content;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = content;
+    return wrap.firstElementChild;
+  };
+
+  // itemsInput ersetzt vorhandenes Markup im Track, statt es zu ergänzen —
+  // die aufrufende Seite entscheidet sich pro Instanz für eine Quelle:
+  // Markup ODER Array, nicht beides gleichzeitig.
+  if (itemsInput) {
+    track.innerHTML = '';
+    itemsInput.forEach((content) => {
+      const itemEl = toElement(content);
+      if (!itemEl) return;
+      if (!itemEl.hasAttribute('data-marquee-item')) itemEl.setAttribute('data-marquee-item', '');
+      track.appendChild(itemEl);
+    });
+  }
+
+  // originals ist ab hier die alleinige Quelle der Wahrheit für "was wird
+  // abgespielt" — build() liest ausschließlich daraus. addItem()/
+  // removeItem() mutieren dieses Array; die Klone für die Endlosschleife
+  // werden danach komplett neu aus dem aktuellen Stand erzeugt.
+  const originals = [...track.querySelectorAll(SEL.item)];
+  if (!originals.length) return null;
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -135,8 +157,30 @@ export function createMarquee(root, options = {}) {
   build();
 
   return {
-    items: originals,
+    get items() { return [...originals]; },
     rebuild: build,
+    // Ändert die Geschwindigkeit (px/s) live nach — build() berechnet die
+    // Animationsdauer aus der aktuellen Inhaltsbreite neu.
+    setSpeed(px) { speed = px; build(); },
+    // Hängt ein weiteres Item an die Sammlung an — originals ist die Quelle
+    // der Wahrheit für build(), das Element landet dadurch korrekt mit im
+    // Endlosschleifen-Klon-Zyklus statt nur einmalig sichtbar zu sein.
+    addItem(content) {
+      const itemEl = toElement(content);
+      if (!itemEl) return null;
+      if (!itemEl.hasAttribute('data-marquee-item')) itemEl.setAttribute('data-marquee-item', '');
+      track.appendChild(itemEl);
+      originals.push(itemEl);
+      build();
+      return itemEl;
+    },
+    removeItem(itemEl) {
+      const idx = originals.indexOf(itemEl);
+      if (idx === -1) return;
+      originals.splice(idx, 1);
+      itemEl.remove();
+      build();
+    },
     destroy() {
       window.removeEventListener('resize', onResize);
       track.querySelectorAll('[data-marquee-clone]').forEach((n) => n.remove());
@@ -144,7 +188,6 @@ export function createMarquee(root, options = {}) {
   };
 }
 
-// Initialisiert alle Marquees im Dokument (oder einem übergebenen Selector) auf einmal.
 export function initMarquees(selector = '[data-marquee]', options = {}) {
   return [...document.querySelectorAll(selector)]
     .map((el) => createMarquee(el, options))

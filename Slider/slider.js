@@ -1,19 +1,3 @@
-// Wiederverwendbarer "Peek"-Slider — projektunabhängig.
-//
-// Steuert Verhalten ausschließlich über data-Attribute (kein Bezug zu
-// Projekt-Klassennamen). Styling ist bewusst getrennt: siehe slider.css.
-//
-// Markup-Vertrag:
-//   <div data-slider>
-//     <div data-slider-track>
-//       <div data-slider-slide>…</div>
-//       <div data-slider-slide>…</div>
-//     </div>
-//     <button data-slider-prev></button>
-//     <div data-slider-dots></div>   <!-- leer lassen: Dots werden erzeugt -->
-//     <button data-slider-next></button>
-//   </div>
-
 const SEL = {
   track: '[data-slider-track]',
   slide: '[data-slider-slide]',
@@ -29,27 +13,72 @@ export function createSlider(root, options = {}) {
 
   const {
     loop = true,
-    autoplay = false,       // Intervall in ms, false = aus
-    autoHeight = false,     // Container-Höhe an aktiven Slide anpassen
-    heightSelector = null,  // z.B. '.container' — misst ein Kind statt des Slides selbst
+    autoplay = false,
+    autoHeight = false,
+    heightSelector = null,
     startIndex = 0,
     swipe = true,
     keyboard = true,
+    // Wiedergabemöglichkeit: 'single' (Standard, 1 Bild/Slide, klassisches
+    // Verhalten) | 'multi' (mehrere gleich breite Slides gleichzeitig) |
+    // 'featured' (1 großer + mehrere kleine Peek-Slides). Rein visuell — das
+    // Script kennt keine Breiten, setzt nur das data-Attribut, slider.css
+    // übernimmt darüber die tatsächliche Größenverteilung.
+    mode = 'single',
+    // Überschreibt --slider-visible-slides (Anzahl gleichzeitig sichtbarer
+    // Slides in Modus 'multi'/'featured') von außen statt über die
+    // responsiven CSS-Standardwerte (1/3/4 nach Bildschirmbreite) — die
+    // Variable kommt damit wahlweise aus der API oder aus slider.css.
+    visibleSlides = null,
+    slides: slidesInput = null, // optional: Array von HTML-Strings/Elementen statt vorgefertigtem Markup
     onChange = null,
   } = options;
 
-  const track  = el.querySelector(SEL.track);
+  const track = el.querySelector(SEL.track);
+  if (!track) return null;
+
+  el.setAttribute('data-slider-mode', mode);
+  if (visibleSlides != null) el.style.setProperty('--slider-visible-slides', visibleSlides);
+
+  const toElement = (content) => {
+    if (content instanceof Element) return content;
+    const wrap = document.createElement('div');
+    wrap.innerHTML = content;
+    return wrap.firstElementChild;
+  };
+
+  // slidesInput ersetzt vorhandenes Markup im Track, statt es zu ergänzen —
+  // die aufrufende Seite entscheidet sich pro Instanz für eine Quelle:
+  // Markup ODER Array, nicht beides gleichzeitig.
+  if (slidesInput) {
+    track.innerHTML = '';
+    slidesInput.forEach((content) => {
+      const slideEl = toElement(content);
+      if (!slideEl) return;
+      if (!slideEl.hasAttribute('data-slider-slide')) slideEl.setAttribute('data-slider-slide', '');
+      track.appendChild(slideEl);
+    });
+  }
+
+  // slides ist ab hier die alleinige Quelle der Wahrheit für "was wird
+  // abgespielt" — offsetTo()/render()/setHeight() lesen ausschließlich daraus.
+  // addSlide()/removeSlide() mutieren dieses Array in place (splice/push),
+  // nie per Neuzuweisung, damit die zurückgegebene Referenz live bleibt.
   const slides = [...el.querySelectorAll(SEL.slide)];
-  if (!track || !slides.length) return null;
+  if (!slides.length) return null;
+  // Die Breiten-Regel in slider.css hängt an dieser Klasse, nicht am
+  // data-slider-slide-Attribut — wird hier erzwungen, damit auch komplett
+  // eigenes/komplexes Slide-Markup (ohne Kenntnis der Tool-CSS) korrekt
+  // dimensioniert wird, statt sich am Inhalt zu verzerren.
+  slides.forEach((s) => s.classList.add('tw-slider__slide'));
 
   const prevBtn  = el.querySelector(SEL.prev);
   const nextBtn  = el.querySelector(SEL.next);
   const dotsWrap = el.querySelector(SEL.dots);
 
-  let dots = dotsWrap ? [...dotsWrap.querySelectorAll(SEL.dot)] : [];
-  if (dotsWrap && dots.length !== slides.length) {
+  const buildDots = () => {
     dotsWrap.innerHTML = '';
-    dots = slides.map((_, i) => {
+    return slides.map((_, i) => {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'tw-slider__dot';
@@ -58,14 +87,31 @@ export function createSlider(root, options = {}) {
       dotsWrap.appendChild(b);
       return b;
     });
+  };
+
+  let dots = dotsWrap ? [...dotsWrap.querySelectorAll(SEL.dot)] : [];
+  if (dotsWrap && dots.length !== slides.length) {
+    dots = buildDots();
   }
+  const wireDots = () => dots.forEach((dot, i) => dot.addEventListener('click', () => goTo(i)));
+  const syncDots = () => {
+    if (!dotsWrap) return;
+    dots = buildDots();
+    wireDots();
+  };
 
   let current = Math.min(Math.max(startIndex, 0), slides.length - 1);
   let autoplayTimer = null;
 
-  const step = () => {
+  // Summe der Breiten (+Gap) aller Slides vor idx — funktioniert auch bei
+  // ungleich breiten Slides (Modus 'featured'), weil jede Breite live per
+  // getBoundingClientRect() gemessen wird statt eine einheitliche Breite
+  // anzunehmen wie im alten step()-Modell.
+  const offsetTo = (idx) => {
     const gap = parseFloat(getComputedStyle(track).gap) || 0;
-    return slides[0].getBoundingClientRect().width + gap;
+    let offset = 0;
+    for (let i = 0; i < idx; i++) offset += slides[i].getBoundingClientRect().width + gap;
+    return offset;
   };
 
   const setHeight = () => {
@@ -75,7 +121,7 @@ export function createSlider(root, options = {}) {
   };
 
   const setPosition = () => {
-    track.style.transform = `translateX(-${current * step()}px)`;
+    track.style.transform = `translateX(-${offsetTo(current)}px)`;
   };
 
   const render = () => {
@@ -96,7 +142,7 @@ export function createSlider(root, options = {}) {
   const next = () => goTo(current + 1);
   const prev = () => goTo(current - 1);
 
-  dots.forEach((dot, i) => dot.addEventListener('click', () => goTo(i)));
+  wireDots();
   prevBtn?.addEventListener('click', prev);
   nextBtn?.addEventListener('click', next);
 
@@ -161,6 +207,46 @@ export function createSlider(root, options = {}) {
     next,
     prev,
     get current() { return current; },
+    // Erzwingt Neu-Layout (Position/Höhe), ohne current zu ändern — nötig
+    // nach externen Änderungen, die die Slide-Breiten beeinflussen (z.B.
+    // --slider-visible-slides/--slider-featured-width von außen gesetzt).
+    refresh: render,
+    // Wechselt die Wiedergabemöglichkeit zur Laufzeit (siehe mode-Option)
+    // und rendert neu, da sich dadurch die Slide-Breiten ändern können.
+    setMode(newMode) {
+      el.setAttribute('data-slider-mode', newMode);
+      render();
+    },
+    // Setzt --slider-visible-slides zur Laufzeit (z.B. von der aufrufenden
+    // Seite anhand der aktuellen Bildschirmbreite bestimmt) und rendert neu.
+    setVisibleSlides(n) {
+      el.style.setProperty('--slider-visible-slides', n);
+      render();
+    },
+    // Fügt eine Slide in slides ein (Quelle der Wahrheit für offsetTo()/render())
+    // und baut Dots + Position neu auf — kein destroy()/createSlider()-Zyklus
+    // nötig, um eine nachträgliche Slide aufzunehmen.
+    addSlide(content, { index = slides.length } = {}) {
+      const slideEl = toElement(content);
+      if (!slideEl) return null;
+      if (!slideEl.hasAttribute('data-slider-slide')) slideEl.setAttribute('data-slider-slide', '');
+      slideEl.classList.add('tw-slider__slide');
+      track.insertBefore(slideEl, slides[index] || null);
+      slides.splice(index, 0, slideEl);
+      if (index <= current) current++;
+      syncDots();
+      render();
+      return slideEl;
+    },
+    removeSlide(slideEl) {
+      const idx = slides.indexOf(slideEl);
+      if (idx === -1) return;
+      slides.splice(idx, 1);
+      slideEl.remove();
+      current = Math.max(0, Math.min(current > idx ? current - 1 : current, slides.length - 1));
+      syncDots();
+      render();
+    },
     destroy() {
       window.removeEventListener('resize', onResize);
       stopAutoplay();
@@ -173,7 +259,6 @@ export function createSlider(root, options = {}) {
   };
 }
 
-// Initialisiert alle Slider im Dokument (oder einem übergebenen Selector) auf einmal.
 export function initSliders(selector = '[data-slider]', options = {}) {
   return [...document.querySelectorAll(selector)]
     .map((el) => createSlider(el, options))

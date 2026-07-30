@@ -1,22 +1,3 @@
-// Wiederverwendbares Bild-Lightbox-Popup — projektunabhängig.
-//
-// Öffnet beim Klick auf ein Item ein Overlay mit Großansicht. Die Bildquelle
-// kommt standardmäßig aus dem enthaltenen <img>, kann per
-// [data-lightbox-src] überschrieben werden (z.B. Vollauflösung statt
-// Thumbnail). Eine Bildunterschrift ist optional über [data-lightbox-caption]
-// steuerbar — fehlt das Attribut, bleibt die Caption leer und unsichtbar.
-//
-// Das Overlay ist ein Singleton pro Dokument (wird einmalig in <body>
-// erzeugt und von allen Instanzen geteilt) — es kann ohnehin immer nur ein
-// Bild gleichzeitig angezeigt werden.
-//
-// Markup-Vertrag:
-//   <div data-lightbox>
-//     <div data-lightbox-item data-lightbox-src="full.jpg" data-lightbox-caption="Text">
-//       <img src="thumb.jpg" alt="">
-//     </div>
-//   </div>
-
 const SEL = {
   item: '[data-lightbox-item]',
 };
@@ -24,8 +5,6 @@ const SEL = {
 const STYLE_ID = 'tw-lightbox-styles';
 const OVERLAY_ID = 'tw-lightbox-overlay';
 
-// Identisch zu lightboxpopup.css — hier eingebettet, damit das Popup ohne
-// zusätzlichen <link> lauffähig ist. Wird einmalig pro Dokument injiziert.
 const CSS = `
 .tw-lightbox {
   --lightbox-bg: rgba(0, 0, 0, .85);
@@ -157,9 +136,6 @@ export function createLightbox(root, options = {}) {
   };
   el.addEventListener('click', onItemClick);
 
-  // Overlay-Verhalten (Backdrop/Escape/Close-Button) wird nur einmal
-  // verdrahtet — das Overlay ist ein Singleton, mehrfaches Binden würde nur
-  // zu redundanten (aber harmlosen) doppelten close()-Aufrufen führen.
   if (!overlay.dataset.wired) {
     overlay.dataset.wired = '1';
 
@@ -189,8 +165,6 @@ export function createLightbox(root, options = {}) {
   };
 }
 
-// Initialisiert alle Lightbox-Container im Dokument (oder einem übergebenen
-// Selector) auf einmal.
 export function initLightboxes(selector = '[data-lightbox]', options = {}) {
   return [...document.querySelectorAll(selector)]
     .map((el) => createLightbox(el, options))
